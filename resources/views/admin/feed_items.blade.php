@@ -1,22 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
+    {{-- <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('feeds') }}
         </h2>
-    </x-slot>
+    </x-slot> --}}
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                {{-- <div class="text-gray-900">
-                    <form action="{{ route('admin.feeds') }}" method="post">
-                        @csrf
-                        <x-text-input id="url" class="block mt-1 w-full" type="text" name="url" :value="old('url')"
-                            required autofocus autocomplete="url" />
-                        <x-primary-button type="submit">Submit</x-primary-button>
-                        <x-input-error :messages="$errors->get('url')" class="mt-2" />
-                    </form>
-                </div> --}}
                 <div class="flex flex-col gap-3">
                     {{-- {{dd($feed_items)}} --}}
                     @foreach ($feed_items as $item)

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Feed;
+use App\Models\Statistics;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Services\Feed\FeedService;
+use Log;
 
 class FeedController extends Controller
 {
@@ -31,6 +34,8 @@ class FeedController extends Controller
     public function store(Request $request)
     {
         ///добавить выбор категории или категорий источника
+        DB::beginTransaction();
+
         $request->validate([
             'url' => ['required', 'string', 'max:255'],
         ]);
@@ -39,9 +44,13 @@ class FeedController extends Controller
             $feed = FeedService::fromRequest($request)->read()->get();
             Feed::create($feed);
 
+            Statistics::increment('feeds_count');
+
+            DB::commit();
             return back()->with('success', 'Feed created successfully.');
-        } 
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Feed saving error: {$e->getMessage()}");
             return redirect(route('admin.feeds'))->withErrors(['url' => $e->getMessage()]);
         }
     }
@@ -60,7 +69,7 @@ class FeedController extends Controller
     public function edit($id)
     {
         $feed = Feed::findOrFail($id);
-        return view('admin.edit_feed')->with('feed',$feed);
+        return view('admin.edit_feed')->with('feed', $feed);
     }
 
     /**
@@ -68,7 +77,7 @@ class FeedController extends Controller
      */
     public function update(Request $request, $id)
     {
-        try{
+        try {
             $feed = Feed::findOrFail($id);
             $validated = $request->validate([
                 'title' => ['required', 'string', 'max:255'],
@@ -88,8 +97,7 @@ class FeedController extends Controller
 
             $feed->update($validated);
             return back()->with('success', 'Feed updated successfully.');
-        }
-        catch(\Exception $e){
+        } catch (\Exception $e) {
             dd($e);
             \Log::error("Feed updating error: {$e->getMessage()}");
             return back()->with('error', $e->getMessage());

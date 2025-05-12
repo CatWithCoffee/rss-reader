@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Statistics;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class RegisteredUserController extends Controller
 {
@@ -29,6 +31,7 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        DB::beginTransaction();
         try{
             $request->validate([
             'login' => ['required', 'string', 'max:255'],
@@ -44,6 +47,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        Statistics::increment('users_count');
+
+        DB::commit();
+
         event(new Registered($user));
 
         Auth::login($user);
@@ -51,6 +58,7 @@ class RegisteredUserController extends Controller
         return redirect(route('dashboard', absolute: false));
         }
         catch(\Exception $e){
+            DB::rollBack();
             return redirect(route('register', absolute: false))->withErrors(['email' => $e->getMessage()]);
         }
         

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Feed;
 use App\Models\Feed_Item;
 
+use App\Models\Statistics;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Exception;
 use Log;
 use Throwable;
@@ -69,6 +71,7 @@ class FeedItemController extends Controller
      */
     public function store($id)
     {
+        DB::beginTransaction();
         try {
             $feed = Feed::findOrFail($id);
             $items = FeedItemService::fromFeed($feed)
@@ -90,9 +93,17 @@ class FeedItemController extends Controller
                 ? $message = "No new items found. {$skipped} duplicates skipped"
                 : $message = "Saved {$count} items" . ($skipped ? ", {$skipped} duplicates skipped" : "");
 
+            $feed->last_fetched_at = now();
+            $feed->items_count += $count;
+            $feed->save();
+            
+            Statistics::increment('items_count', $count);
+
+            DB::commit();
             return back()->with('success', $message);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error("Feed processing error: {$e->getMessage()}");
             return back()->with('error', $e->getMessage());
         }

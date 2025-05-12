@@ -19,6 +19,7 @@ class Feed extends Model
         'is_active',
         'etag',
         'update_frequency',
+        'last_modified',
     ];
 
     public function items()
