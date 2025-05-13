@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Feed;
 use App\Models\Statistics;
+use App\Rules\ValidRssFeed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\Feed\FeedService;
+use Validator;
 use Log;
 
 class FeedController extends Controller
@@ -34,11 +36,18 @@ class FeedController extends Controller
     public function store(Request $request)
     {
         ///добавить выбор категории или категорий источника
-        DB::beginTransaction();
 
-        $request->validate([
-            'url' => ['required', 'string', 'max:255'],
+        $validator = Validator::make($request->all(), [
+            'url' => ['required', 'max:255', new ValidRssFeed()],
         ]);
+        
+        if ($validator->fails()){
+            return back()
+                ->with('error', $validator->errors()->first())
+                ->withInput();
+        }
+        
+        DB::beginTransaction();
 
         try {
             $feed = FeedService::fromRequest($request)->read()->get();

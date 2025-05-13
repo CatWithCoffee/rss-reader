@@ -58,9 +58,16 @@ class FeedItemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $items = FeedItem::with('feed')
+            ->when($request->source, fn($q) => $q->where('feed_id', $request->source))
+            ->latest('published_at')
+            ->paginate(12);
 
+        $sources = Feed::has('items')->get();
+
+        return view('dashboard', compact('items', 'sources'));
     }
 
     /**
