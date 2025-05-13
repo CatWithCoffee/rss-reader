@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('feed__items', function (Blueprint $table) {
+        Schema::create('feed_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('feed_id')->constrained(); // Связь с RSS-каналом
             $table->string('guid')->unique();            // Уникальный ID статьи (из RSS)

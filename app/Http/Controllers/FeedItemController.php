@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Feed;
-use App\Models\Feed_Item;
+use App\Models\FeedItem;
 
 use App\Models\Statistics;
 use Illuminate\Http\Request;
@@ -20,16 +20,15 @@ class FeedItemController extends Controller
 {
     public function direct($id)
     {
+        if ($id === 'all')
+            return $this->directAll();
+
         try {
-            $feed = Feed::find($id);
-
-            $items = FeedItemService::fromFeed($feed)
-                ->paginate(20)
-                ->get();
-
-            return view('admin.feed_items')->with('feed_items', $items);
+            $items = FeedItem::where('feed_id', $id)->latest()->paginate(20);
+            return view('admin.FeedItems')->with('FeedItems', $items);
         } catch (Throwable $th) {
-            return back();
+            Log::error(`Direct feed items error: {$th->getMessage()}`);
+            return back()->with('error', $th->getMessage());
         }
 
     }
@@ -37,16 +36,22 @@ class FeedItemController extends Controller
     public function directAll()
     {
         try {
-            $feeds = Feed::all();
+            $items = FeedItem::with('feed')
+                ->orderBy('published_at', 'desc')
+                ->paginate(20);
 
-            $feed_items = FeedItemService::fromFeeds($feeds)
-                ->sort('desc')
-                ->paginate(10)
-                ->get();
+            return view('admin.FeedItems_all', [
+                'items' => $items,
+                'totalItems' => $items->total()
+            ]);
 
-            return view('admin.feed_items', compact('feed_items'));
-        } catch (Throwable $th) {
-            return back();
+        } catch (Throwable $e) {
+            Log::error('Failed to fetch feed items: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            return back()
+                ->with('error', 'Произошла ошибка при загрузке новостей');
         }
 
     }
@@ -77,20 +82,20 @@ class FeedItemController extends Controller
             $items = FeedItemService::fromFeed($feed)
                 ->sort('asc')
                 ->get();
-            
+
             if (empty($items)) {
                 DB::rollBack();
                 return back()->with('info', 'No new items found');
             }
-            
+
             $processedItems = FeedItemService::processItems($items);
-            if ($processedItems){
+            if ($processedItems) {
                 $columns = array_diff(
                     array_keys(reset($processedItems)),
                     ['guid', 'created_at']
                 );
-                
-                Feed_Item::upsert($processedItems, ['guid'], $columns);
+
+                FeedItem::upsert($processedItems, ['guid'], $columns);
             }
 
             $count = count($processedItems);
@@ -102,7 +107,7 @@ class FeedItemController extends Controller
             $feed->last_fetched_at = now();
             $feed->items_count += $count;
             $feed->save();
-            
+
             Statistics::increment('items_count', $count);
 
             DB::commit();
@@ -118,7 +123,7 @@ class FeedItemController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Feed_Item $feed_Item)
+    public function show(FeedItem $FeedItem)
     {
         //
     }
@@ -126,7 +131,7 @@ class FeedItemController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Feed_Item $feed_Item)
+    public function edit(FeedItem $FeedItem)
     {
         //
     }
@@ -134,7 +139,7 @@ class FeedItemController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Feed_Item $feed_Item)
+    public function update(Request $request, FeedItem $FeedItem)
     {
         //
     }
@@ -142,7 +147,7 @@ class FeedItemController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Feed_Item $feed_Item)
+    public function destroy(FeedItem $FeedItem)
     {
         //
     }

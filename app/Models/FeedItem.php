@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Feed_Item extends Model
+class FeedItem extends Model
 {
     protected $fillable = [
         'feed_id',
@@ -25,4 +25,12 @@ class Feed_Item extends Model
         'categories' => 'array',
         'enclosures' => 'array'
     ];
+
+    protected $table = 'feed_items';
+    
+    public function feed()
+    {
+        return $this->belongsTo(Feed::class, 'feed_id');
+    }
+
 }

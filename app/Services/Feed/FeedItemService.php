@@ -2,7 +2,7 @@
 
 namespace App\Services\Feed;
 
-use App\Models\Feed_Item;
+use App\Models\FeedItem;
 
 use app\Models\Feed;
 use Vedmant\FeedReader\Facades\FeedReader;
@@ -22,26 +22,10 @@ class FeedItemService
         return (new self())->loadFeed($feed);
     }
 
-    public static function fromFeeds(iterable $feeds)
-    {
-        return (new self())->loadFeeds($feeds);
-    }
-
     public function loadFeed(Feed $feed)
     {
         $this->source = $feed;
         $this->items = $this->readFeed($feed);
-        return $this;
-    }
-
-    public function loadFeeds(iterable $feeds)
-    {
-        $this->source = collect($feeds);
-        $this->items = [];
-
-        foreach ($this->source as $feed) {
-            $this->items = array_merge($this->items, $this->readFeed($feed));
-        }
         return $this;
     }
 
@@ -72,6 +56,7 @@ class FeedItemService
             if (empty($content)) {
                 throw new Exception('Получен пустой ответ');
             }
+
 
             // 4. Проверка изменений через хеш
             $newContentHash = md5($content);
@@ -134,7 +119,7 @@ class FeedItemService
                 'guid' => $item->get_id(),
                 'title' => $this->cleanText($item->get_title()),
                 'description' => $this->cleanText($item->get_description()),
-                'content' => $this->cleanText($item->get_content()),
+                'content' => $item->get_description() !== $item->get_content() ? $this->cleanText($item->get_content()) : null,
                 'link' => $item->get_permalink() ?? $item->get_link(),
                 'published_at' => $item->get_gmdate() ?? $item->get_date(),
                 'thumbnail' => $this->get_thumbnail($item),
@@ -193,7 +178,7 @@ class FeedItemService
                 return false;
             }
 
-            return !Feed_Item::where('guid', $item['guid'])->exists();
+            return !FeedItem::where('guid', $item['guid'])->exists();
 
 
         });

@@ -34,10 +34,10 @@ Route::middleware(['auth', 'role:admin'])->group(function() {
     Route::get('/admin/edit_feed/{id}', [FeedController::class, 'edit'])->name('admin.edit_feed');
     Route::put('/admin/update_feed/{id}', [FeedController::class, 'update'])->name('admin.update_feed');
 
-    Route::get('/admin/direct_feed_items/{id}', [FeedItemController::class, 'direct'])->name('admin.direct_feed_items');
-    Route::get('/admin/direct_feed_items/all', [FeedItemController::class, 'directAll'])->name('admin.direct_feed_items_all');
+    Route::get('/admin/FeedItems/{id}', [FeedItemController::class, 'direct'])->name('admin.FeedItems');
+    Route::get('/admin/FeedItems/all', [FeedItemController::class, 'directAll'])->name('admin.FeedItems_all');
     
-    Route::get('/admin/save_feed_items/{id}', [FeedItemController::class, 'store'])->name('admin.save_feed_items');
+    Route::get('/admin/save_FeedItems/{id}', [FeedItemController::class, 'store'])->name('admin.save_FeedItems');
 });
 
 require __DIR__.'/auth.php';

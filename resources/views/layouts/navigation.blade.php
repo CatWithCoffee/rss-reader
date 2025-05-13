@@ -79,6 +79,10 @@
                     <x-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
                         {{ __('Feeds') }}
                     </x-nav-link>
+                    
+                    <x-nav-link :href="route('admin.FeedItems_all')" :active="request()->routeIs('admin.FeedItems*')">
+                        {{ __('Direct feed items') }}
+                    </x-nav-link>
                 </div>
             </div>
         </div>
