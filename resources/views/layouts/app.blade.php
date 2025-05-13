@@ -31,6 +31,21 @@
                 });
             });
         @endif
+        @if(session('info'))
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Info',
+                    text: "{{ session('info') }}",
+                    toast: true,
+                    position: 'bottom-end',
+                    showCloseButton: true,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            });
+        @endif
         @if(session('warning'))
             document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({

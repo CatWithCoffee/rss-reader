@@ -98,8 +98,7 @@ class FeedController extends Controller
             $feed->update($validated);
             return back()->with('success', 'Feed updated successfully.');
         } catch (\Exception $e) {
-            dd($e);
-            \Log::error("Feed updating error: {$e->getMessage()}");
+            Log::error("Feed updating error: {$e->getMessage()}");
             return back()->with('error', $e->getMessage());
         }
     }

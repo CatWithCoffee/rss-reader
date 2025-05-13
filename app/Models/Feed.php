@@ -18,8 +18,13 @@ class Feed extends Model
         'color',
         'is_active',
         'etag',
+        'content_hash',
         'update_frequency',
         'last_modified',
+    ];
+
+    protected $casts = [
+        'last_modified' => 'datetime'
     ];
 
     public function items()

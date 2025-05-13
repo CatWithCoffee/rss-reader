@@ -32,6 +32,7 @@ return new class extends Migration {
             $table->integer('items_count')->nullable(); // Количество записей
             $table->boolean('is_active')->default(true); // Активен ли канал
             $table->string('etag')->nullable(); // Для кеширования (HTTP-заголовок)
+            $table->string('content_hash', 32)->nullable(); // Для кеширования (содержимое)
             $table->string('last_modified')->nullable(); // Дата последнего изменения ленты
             $table->timestamps(); // Поля created_at и updated_at
             $table->softDeletes(); // Поле deleted_at вместо удаления записей
