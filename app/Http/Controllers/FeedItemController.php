@@ -77,6 +77,12 @@ class FeedItemController extends Controller
             $items = FeedItemService::fromFeed($feed)
                 ->sort('asc')
                 ->get();
+            
+            if (empty($items)) {
+                DB::rollBack();
+                return back()->with('info', 'No new items found');
+            }
+            
             $processedItems = FeedItemService::processItems($items);
             if ($processedItems){
                 $columns = array_diff(

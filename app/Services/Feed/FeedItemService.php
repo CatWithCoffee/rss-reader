@@ -6,6 +6,7 @@ use App\Models\Feed_Item;
 
 use app\Models\Feed;
 use Vedmant\FeedReader\Facades\FeedReader;
+use Http;
 
 use Log;
 use Exception;
@@ -46,16 +47,94 @@ class FeedItemService
 
     protected function readFeed($feed)
     {
-        $feedItems = FeedReader::read($feed->url)->get_items();
-        $result = [];
+        try {
+            // 1. Настраиваем запрос с явным указанием поддерживаемых методов сжатия
+            $response = Http::withOptions([
+                'decode_content' => true, // Автоматическое распаковывание
+                'force_ip_resolve' => 'v4', // Избегаем проблем с IPv6
+            ])->withHeaders([
+                        'If-None-Match' => $feed->etag ? '"' . $feed->etag . '"' : null,
+                        'Accept-Encoding' => 'gzip, deflate', // Только поддерживаемые методы
+                        'User-Agent' => config('app.name') . '/1.0',
+                    ])->timeout(15)->get($feed->url);
 
-        foreach ($feedItems as $key => $item) {
-            $result[$key] = [
+            // 2. Обработка возможного brotli-сжатия вручную
+            if ($response->header('Content-Encoding') === 'br') {
+                if (!function_exists('brotli_uncompress')) {
+                    throw new Exception('Требуется расширение brotli для декомпрессии');
+                }
+                $content = brotli_uncompress($response->body());
+            } else {
+                $content = $response->body();
+            }
+
+            // 3. Проверка пустого содержимого
+            if (empty($content)) {
+                throw new Exception('Получен пустой ответ');
+            }
+
+            // 4. Проверка изменений через хеш
+            $newContentHash = md5($content);
+            if ($this->feedUnchanged($feed, $response, $newContentHash)) {
+                $feed->touch();
+                return null;
+            }
+
+            // 5. Обработка фида
+            $f = FeedReader::read($feed->url);
+            $f->set_raw_data($content);
+            $f->enable_cache(false);
+
+            if (!$f->init()) {
+                throw new Exception("Ошибка парсинга: " . $f->error());
+            }
+
+            // 6. Обновление метаданных
+            $this->updateFeedMetadata($feed, $response, $newContentHash);
+
+            // 7. Обработка элементов
+            return $this->processFeedItems($f->get_items(), $feed);
+
+        } catch (Exception $e) {
+            Log::error("Ошибка обработки фида {$feed->url}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    protected function feedUnchanged($feed, $response, $newHash): bool
+    {
+        return $response->status() === 304 ||
+            ($feed->etag && $response->header('ETag') && trim($response->header('ETag'), '"\'') === $feed->etag) ||
+            $feed->content_hash === $newHash;
+    }
+
+    protected function updateFeedMetadata($feed, $response, $newHash)
+    {
+        $updateData = [
+            'content_hash' => $newHash,
+            'last_fetched_at' => now(),
+        ];
+
+        if ($etag = $response->header('ETag')) {
+            $updateData['etag'] = trim($etag, '"\'');
+        }
+
+        if ($lastModified = $response->header('Last-Modified')) {
+            $updateData['last_modified'] = $lastModified;
+        }
+
+        $feed->update($updateData);
+    }
+
+    protected function processFeedItems($items, $feed)
+    {
+        return collect($items)->map(function ($item) use ($feed) {
+            return [
                 'feed_id' => $feed->id,
                 'guid' => $item->get_id(),
-                'title' => $item->get_title(),
-                'description' => strip_tags($item->get_description()),
-                'content' => strip_tags($item->get_content()),
+                'title' => $this->cleanText($item->get_title()),
+                'description' => $this->cleanText($item->get_description()),
+                'content' => $this->cleanText($item->get_content()),
                 'link' => $item->get_permalink() ?? $item->get_link(),
                 'published_at' => $item->get_gmdate() ?? $item->get_date(),
                 'thumbnail' => $this->get_thumbnail($item),
@@ -65,8 +144,12 @@ class FeedItemService
                 'feed' => $feed->title,
                 'color' => $feed->color
             ];
-        }
-        return $result;
+        })->toArray();
+    }
+
+    protected function cleanText(?string $text): ?string
+    {
+        return $text ? strip_tags(html_entity_decode($text)) : null;
     }
 
     public static function processItems(array $items): array
@@ -104,7 +187,7 @@ class FeedItemService
         }, $items);
 
         // Затем фильтруем дубликаты
-        $filtered =  array_filter($processedItems, function ($item) {
+        $filtered = array_filter($processedItems, function ($item) {
             if (!isset($item['guid']) || is_array($item['guid'])) {
                 Log::warning("Invalid GUID format", ['guid' => $item['guid'] ?? null]);
                 return false;
@@ -125,6 +208,12 @@ class FeedItemService
      */
     public function sort(string $sort_by = 'desc')
     {
+        if (!$this->items) {
+            return $this;
+        }
+        if (!in_array($sort_by, ['asc', 'desc'])) {
+            $sort_by = 'desc';
+        }
         $data = [];
         if ($sort_by == 'asc') {
             $data = usort($this->items, function ($a, $b) {
