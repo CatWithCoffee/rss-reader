@@ -5,9 +5,10 @@ namespace App\Services\Feed;
 use App\Models\FeedItem;
 
 use app\Models\Feed;
+use app\Models\Statistics;
 use Vedmant\FeedReader\Facades\FeedReader;
 use Http;
-
+use DB;
 use Log;
 use Exception;
 use Carbon\Carbon;
@@ -29,6 +30,140 @@ class FeedItemService
         return $this;
     }
 
+    public static function processItems(array $items): array
+    {
+        // Сначала преобразуем все элементы
+        $processedItems = array_map(function ($item) {
+            // Подготовка данных
+            $item['title'] = html_entity_decode($item['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $item['description'] = html_entity_decode($item['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            $item['authors'] = isset($item['authors']) && is_array($item['authors'])
+                ? json_encode($item['authors'], JSON_UNESCAPED_UNICODE)
+                : null;
+
+            $item['categories'] = isset($item['categories']) && is_array($item['categories'])
+                ? json_encode($item['categories'], JSON_UNESCAPED_UNICODE)
+                : null;
+
+            $item['enclosures'] = isset($item['enclosures']) && is_array($item['enclosures'])
+                ? json_encode($item['enclosures'], JSON_UNESCAPED_UNICODE)
+                : null;
+
+            try {
+                $item['published_at'] = $item['published_at']
+                    ? Carbon::parse($item['published_at'])->toDateTimeString()
+                    : null;
+            } catch (Exception $e) {
+                Log::warning("Date parsing failed for GUID: " . $item['guid']);
+                $item['published_at'] = null;
+            }
+
+            unset($item['color'], $item['feed']);
+
+            return $item;
+        }, $items);
+
+        // Затем фильтруем дубликаты
+        $filtered = array_filter($processedItems, function ($item) {
+            if (!isset($item['guid']) || is_array($item['guid'])) {
+                Log::warning("Invalid GUID format", ['guid' => $item['guid'] ?? null]);
+                return false;
+            }
+
+            return !FeedItem::where('guid', $item['guid'])->exists();
+        });
+        return $filtered;
+    }
+
+    /**
+     * asc (by oldest)/desc (by newest) sort
+     *
+     * desc sort is default
+     */
+    public function sort(string $sort_by = 'desc')
+    {
+        if (!$this->items) {
+            return $this;
+        }
+        if (!in_array($sort_by, ['asc', 'desc'])) {
+            $sort_by = 'desc';
+        }
+        $data = [];
+        if ($sort_by == 'asc') {
+            $data = usort($this->items, function ($a, $b) {
+                $dateA = strtotime($a['published_at']);
+                $dateB = strtotime($b['published_at']);
+                return $dateA <=> $dateB;
+            });
+        } else
+            $data = usort($this->items, function ($a, $b) {
+                $dateA = strtotime($a['published_at']);
+                $dateB = strtotime($b['published_at']);
+                return $dateB <=> $dateA;
+            });
+        return $this;
+    }
+
+    // public function paginate(int $perPage = 10)
+    // {
+    //     $currentPage = request()->get('page', 1);
+    //     $pagedData = array_slice($this->items, ($currentPage - 1) * $perPage, $perPage);
+
+    //     $this->items = new \Illuminate\Pagination\LengthAwarePaginator(
+    //         $pagedData,
+    //         count($this->items),
+    //         $perPage,
+    //         $currentPage,
+    //         [
+    //             'path' => request()->url(),
+    //             'query' => request()->query()
+    //         ]
+    //     );
+    //     return $this;
+    // }
+
+
+    public function get()
+    {
+        return $this->items;
+    }
+
+    public function save()
+    {
+        if (empty($this->items)) {
+            return ['count' => 0, 'skipped' => 0];
+        }
+        DB::beginTransaction();
+
+        try {
+            $processedItems = $this->processItems($this->items);
+            if ($processedItems) {
+                $columns = array_diff(
+                    array_keys(reset($processedItems)),
+                    ['guid', 'created_at']
+                );
+
+                FeedItem::upsert($processedItems, ['guid'], $columns);
+            }
+
+            $count = count($processedItems);
+            $skipped = count($this->items) - $count;
+
+            $feed = $this->source;
+            $feed->last_fetched_at = now();
+            $feed->items_count += $count;
+            $feed->save();
+
+            Statistics::increment('items_count', $count);
+
+            DB::commit();
+
+            return ['count' => $count, 'skipped' => $skipped];
+        } catch (Exception $e) {
+            DB::rollBack();
+        }
+    }
     protected function readFeed($feed)
     {
         try {
@@ -56,7 +191,6 @@ class FeedItemService
             if (empty($content)) {
                 throw new Exception('Получен пустой ответ');
             }
-
 
             // 4. Проверка изменений через хеш
             $newContentHash = md5($content);
@@ -135,107 +269,6 @@ class FeedItemService
     protected function cleanText(?string $text): ?string
     {
         return $text ? strip_tags(html_entity_decode($text)) : null;
-    }
-
-    public static function processItems(array $items): array
-    {
-        // Сначала преобразуем все элементы
-        $processedItems = array_map(function ($item) {
-            // Подготовка данных
-            $item['title'] = html_entity_decode($item['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $item['description'] = html_entity_decode($item['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-            $item['authors'] = isset($item['authors']) && is_array($item['authors'])
-                ? json_encode($item['authors'], JSON_UNESCAPED_UNICODE)
-                : null;
-
-            $item['categories'] = isset($item['categories']) && is_array($item['categories'])
-                ? json_encode($item['categories'], JSON_UNESCAPED_UNICODE)
-                : null;
-
-            $item['enclosures'] = isset($item['enclosures']) && is_array($item['enclosures'])
-                ? json_encode($item['enclosures'], JSON_UNESCAPED_UNICODE)
-                : null;
-
-            try {
-                $item['published_at'] = $item['published_at']
-                    ? Carbon::parse($item['published_at'])->toDateTimeString()
-                    : null;
-            } catch (Exception $e) {
-                Log::warning("Date parsing failed for GUID: " . $item['guid']);
-                $item['published_at'] = null;
-            }
-
-            unset($item['color'], $item['feed']);
-
-            return $item;
-        }, $items);
-
-        // Затем фильтруем дубликаты
-        $filtered = array_filter($processedItems, function ($item) {
-            if (!isset($item['guid']) || is_array($item['guid'])) {
-                Log::warning("Invalid GUID format", ['guid' => $item['guid'] ?? null]);
-                return false;
-            }
-
-            return !FeedItem::where('guid', $item['guid'])->exists();
-
-
-        });
-        // dd($filtered);
-        return $filtered;
-    }
-
-    /**
-     * asc (by oldest)/desc (by newest) sort
-     *
-     * desc sort is default
-     */
-    public function sort(string $sort_by = 'desc')
-    {
-        if (!$this->items) {
-            return $this;
-        }
-        if (!in_array($sort_by, ['asc', 'desc'])) {
-            $sort_by = 'desc';
-        }
-        $data = [];
-        if ($sort_by == 'asc') {
-            $data = usort($this->items, function ($a, $b) {
-                $dateA = strtotime($a['published_at']);
-                $dateB = strtotime($b['published_at']);
-                return $dateA <=> $dateB;
-            });
-        } else
-            $data = usort($this->items, function ($a, $b) {
-                $dateA = strtotime($a['published_at']);
-                $dateB = strtotime($b['published_at']);
-                return $dateB <=> $dateA;
-            });
-        return $this;
-    }
-
-    public function paginate(int $perPage = 10)
-    {
-        $currentPage = request()->get('page', 1);
-        $pagedData = array_slice($this->items, ($currentPage - 1) * $perPage, $perPage);
-
-        $this->items = new \Illuminate\Pagination\LengthAwarePaginator(
-            $pagedData,
-            count($this->items),
-            $perPage,
-            $currentPage,
-            [
-                'path' => request()->url(),
-                'query' => request()->query()
-            ]
-        );
-        return $this;
-    }
-
-    public function get()
-    {
-        return $this->items;
     }
 
     protected function get_thumbnail($item)

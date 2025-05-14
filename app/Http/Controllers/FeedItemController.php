@@ -13,6 +13,7 @@ use Log;
 use Throwable;
 use Vedmant\FeedReader\Facades\FeedReader;
 use App\Services\Feed\FeedItemService;
+use App\Jobs\ProcessFeedItems;
 
 use Carbon\Carbon;
 
@@ -24,7 +25,7 @@ class FeedItemController extends Controller
             return $this->directAll();
 
         try {
-            $items = FeedItem::where('feed_id', $id)->latest()->paginate(20);
+            $items = FeedItem::where('feed_id', $id)->orderBy('published_at', 'desc')->paginate(20);
             return view('admin.FeedItems')->with('FeedItems', $items);
         } catch (Throwable $th) {
             Log::error(`Direct feed items error: {$th->getMessage()}`);
@@ -83,48 +84,67 @@ class FeedItemController extends Controller
      */
     public function store($id)
     {
-        DB::beginTransaction();
+        if ($id === 'all') return $this->store_all();
+        
         try {
             $feed = Feed::findOrFail($id);
-            $items = FeedItemService::fromFeed($feed)
-                ->sort('asc')
-                ->get();
 
-            if (empty($items)) {
-                DB::rollBack();
-                return back()->with('info', 'No new items found');
+            if (!$feed->is_active){
+                return back()->with('error', 'Feed is inactive');
             }
 
-            $processedItems = FeedItemService::processItems($items);
-            if ($processedItems) {
-                $columns = array_diff(
-                    array_keys(reset($processedItems)),
-                    ['guid', 'created_at']
-                );
+            $result = ProcessFeedItems::dispatchSync($feed);
 
-                FeedItem::upsert($processedItems, ['guid'], $columns);
+            if (!is_array($result) || !isset($result['count'])) {
+                throw new Exception("Invalid result format from ProcessFeedItems job.");
             }
 
-            $count = count($processedItems);
-            $skipped = count($items) - $count;
-            $count == 0
-                ? $message = "No new items found. {$skipped} duplicates skipped"
-                : $message = "Saved {$count} items" . ($skipped ? ", {$skipped} duplicates skipped" : "");
+            if ($result['count'] == 0) {
+                $message = ['info' => "No new items found. {$result['skipped']} duplicates skipped"];
+            } else {
+                $message = ['success' => "Saved {$result['count']} items" . ($result['skipped'] ? ", {$result['skipped']} duplicates skipped" : "")];
+            }
 
-            $feed->last_fetched_at = now();
-            $feed->items_count += $count;
-            $feed->save();
-
-            Statistics::increment('items_count', $count);
-
-            DB::commit();
-            return back()->with('success', $message);
-
+            return back()->with($message);
         } catch (Exception $e) {
-            DB::rollBack();
             Log::error("Feed processing error: {$e->getMessage()}");
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    public function store_all()
+    {
+        try {
+            $totalCount = 0;
+            $totalSkipped = 0;
+
+            $feeds = Feed::where('is_active', true)->get();
+
+            foreach ($feeds as $feed) {
+                Log::info("Processing feed: " . $feed->url);
+
+                $result = ProcessFeedItems::dispatchSync($feed);
+
+                if (!is_array($result) || !isset($result['count'])) {
+                    throw new Exception("Invalid result format from ProcessFeedItems job for feed {$feed->url}.");
+                }
+
+                $totalCount += $result['count'];
+                $totalSkipped += $result['skipped'];
+            }
+
+            if ($totalCount == 0) {
+                $message = ['info' => "No new items found. {$totalSkipped} duplicates skipped"];
+            } else {
+                $message = ['success' => "Saved {$totalCount} items" . ($totalSkipped ? ", {$totalSkipped} duplicates skipped" : "")];
+            }
+
+            return back()->with($message);
+        } catch (Exception $e) {
+            Log::error("Feed processing error: {$e->getMessage()}");
+            return back()->with('error', $e->getMessage());
+        }
+
     }
 
     /**

@@ -21,6 +21,10 @@
 
                 <!-- Feeds List -->
                 <div class="space-y-6">
+                    <x-secondary-link 
+                        href="{{ route('admin.save_FeedItems_all') }}">
+                        Save all
+                    </x-secondary-link>
                     @foreach ($feeds as $feed)
                         <div class="bg-gray-50 p-4 rounded-lg shadow">
                             <!-- Feed Header -->
@@ -54,7 +58,7 @@
                                         <div class="flex items-center space-x-2">
                                             <span class="text-gray-700">Brand color:</span>
                                             <span class="w-4 h-4 rounded-full inline-block border border-gray-300" 
-                                                  style="background-color: {{ $feed->color }};"></span>
+                                                style="background-color: {{ $feed->color }};"></span>
                                             <span>{{ $feed->color }}</span>
                                         </div>
                                     @endif
