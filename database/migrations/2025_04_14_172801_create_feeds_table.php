@@ -29,7 +29,7 @@ return new class extends Migration {
             // Технические поля
             $table->timestamp('last_fetched_at')->nullable(); // Время последнего парсинга
             $table->integer('update_frequency')->default(60); // Частота обновления (в минутах)
-            $table->integer('items_count')->nullable(); // Количество записей
+            $table->integer('articles_count')->nullable(); // Количество записей
             $table->boolean('is_active')->default(true); // Активен ли канал
             $table->string('etag')->nullable(); // Для кеширования (HTTP-заголовок)
             $table->string('content_hash', 32)->nullable(); // Для кеширования (содержимое)

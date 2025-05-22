@@ -27,8 +27,8 @@ class Feed extends Model
         'last_modified' => 'datetime'
     ];
 
-    public function items()
+    public function articles()
     {
-        return $this->hasMany(FeedItem::class);
+        return $this->hasMany(Article::class);
     }
 }

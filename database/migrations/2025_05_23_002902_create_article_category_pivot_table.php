@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statistics', function (Blueprint $table) {
+        Schema::create('article_category_pivot', function (Blueprint $table) {
             $table->id();
-            $table->integer('users_count');
-            $table->integer('feeds_count');
-            $table->integer('articles_count');
             $table->timestamps();
         });
     }
@@ -25,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('statistics');
+        Schema::dropIfExists('article_category_pivot');
     }
 };

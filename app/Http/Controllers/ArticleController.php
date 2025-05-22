@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Feed;
-use App\Models\FeedItem;
+use App\Models\Article;
 
 use App\Models\Statistics;
 use Illuminate\Http\Request;
@@ -12,12 +12,12 @@ use Exception;
 use Log;
 use Throwable;
 use Vedmant\FeedReader\Facades\FeedReader;
-use App\Services\Feed\FeedItemService;
-use App\Jobs\ProcessFeedItems;
+use App\Services\Feed\Articleservice;
+use App\Jobs\ProcessArticles;
 
 use Carbon\Carbon;
 
-class FeedItemController extends Controller
+class ArticleController extends Controller
 {
     public function direct($id)
     {
@@ -26,10 +26,10 @@ class FeedItemController extends Controller
 
         try {
             $feed = Feed::findOrFail($id)->title;
-            $items = FeedItem::where('feed_id', $id)->orderBy('published_at', 'desc')->paginate(20);
-            return view('admin.FeedItems')->with(['FeedItems' => $items, 'feed' => $feed]);
+            $articles = Article::where('feed_id', $id)->orderBy('published_at', 'desc')->paginate(20);
+            return view('admin.articles')->with(['articles' => $articles, 'feed' => $feed]);
         } catch (Throwable $th) {
-            Log::error(`Direct feed items error: {$th->getMessage()}`);
+            Log::error(`Direct feed articles error: {$th->getMessage()}`);
             return back()->with('error', $th->getMessage());
         }
 
@@ -38,17 +38,17 @@ class FeedItemController extends Controller
     public function directAll()
     {
         try {
-            $items = FeedItem::with('feed')
+            $articles = Article::with('feed')
                 ->orderBy('published_at', 'desc')
                 ->paginate(20);
 
-            return view('admin.FeedItems_all', [
-                'items' => $items,
-                'totalItems' => $items->total()
+            return view('admin.articles_all', [
+                'articles' => $articles,
+                'totalArticles' => $articles->total()
             ]);
 
         } catch (Throwable $e) {
-            Log::error('Failed to fetch feed items: ' . $e->getMessage(), [
+            Log::error('Failed to fetch feed articles: ' . $e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -62,7 +62,7 @@ class FeedItemController extends Controller
      */
     public function index(Request $request)
     {
-        $items = FeedItem::with('feed')
+        $articles = Article::with('feed')
             ->when(
                 $request->filled('source'),
                 fn($q) => $q->where('feed_id', $request->source)
@@ -84,17 +84,17 @@ class FeedItemController extends Controller
             ->latest('published_at')
             ->paginate(24);
 
-        $sources = Feed::has('items')->get();
+        $sources = Feed::has('articles')->get();
 
-        return view('dashboard', compact('items', 'sources'));
+        return view('dashboard', compact('articles', 'sources'));
     }
 
     public function showCategory($category)
     {
-        $items = FeedItem::whereJsonContains('categories', $category)->latest('published_at')->paginate(24);
-        $sources = Feed::has('items')->get();
+        $articles = Article::whereJsonContains('categories', $category)->latest('published_at')->paginate(24);
+        $sources = Feed::has('articles')->get();
 
-        return view('dashboard', compact('items', 'sources'));
+        return view('dashboard', compact('articles', 'sources'));
     }
 
     /**
@@ -120,16 +120,16 @@ class FeedItemController extends Controller
                 return back()->with('error', 'Feed is inactive');
             }
 
-            $result = ProcessFeedItems::dispatchSync($feed);
+            $result = ProcessArticles::dispatchSync($feed);
 
             if (!is_array($result) || !isset($result['count'])) {
-                throw new Exception("Invalid result format from ProcessFeedItems job.");
+                throw new Exception("Invalid result format from ProcessArticles job.");
             }
 
             if ($result['count'] == 0) {
-                $message = ['info' => "No new items found. {$result['skipped']} duplicates skipped"];
+                $message = ['info' => "No new articles found. {$result['skipped']} duplicates skipped"];
             } else {
-                $message = ['success' => "Saved {$result['count']} items" . ($result['skipped'] ? ", {$result['skipped']} duplicates skipped" : "")];
+                $message = ['success' => "Saved {$result['count']} articles" . ($result['skipped'] ? ", {$result['skipped']} duplicates skipped" : "")];
             }
 
             return back()->with($message);
@@ -150,10 +150,10 @@ class FeedItemController extends Controller
             foreach ($feeds as $feed) {
                 Log::info("Processing feed: " . $feed->url);
 
-                $result = ProcessFeedItems::dispatchSync($feed);
+                $result = ProcessArticles::dispatchSync($feed);
 
                 if (!is_array($result) || !isset($result['count'])) {
-                    throw new Exception("Invalid result format from ProcessFeedItems job for feed {$feed->url}.");
+                    throw new Exception("Invalid result format from ProcessArticles job for feed {$feed->url}.");
                 }
 
                 $totalCount += $result['count'];
@@ -161,9 +161,9 @@ class FeedItemController extends Controller
             }
 
             if ($totalCount == 0) {
-                $message = ['info' => "No new items found. {$totalSkipped} duplicates skipped"];
+                $message = ['info' => "No new articles found. {$totalSkipped} duplicates skipped"];
             } else {
-                $message = ['success' => "Saved {$totalCount} items" . ($totalSkipped ? ", {$totalSkipped} duplicates skipped" : "")];
+                $message = ['success' => "Saved {$totalCount} articles" . ($totalSkipped ? ", {$totalSkipped} duplicates skipped" : "")];
             }
 
             return back()->with($message);
@@ -177,7 +177,7 @@ class FeedItemController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(FeedItem $FeedItem)
+    public function show(Article $Article)
     {
         //
     }
@@ -185,7 +185,7 @@ class FeedItemController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(FeedItem $FeedItem)
+    public function edit(Article $Article)
     {
         //
     }
@@ -193,7 +193,7 @@ class FeedItemController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, FeedItem $FeedItem)
+    public function update(Request $request, Article $Article)
     {
         //
     }
@@ -201,7 +201,7 @@ class FeedItemController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(FeedItem $FeedItem)
+    public function destroy(Article $Article)
     {
         //
     }

@@ -45,21 +45,21 @@ class SourceController extends Controller
 
         // dd($f);
 
-        // $item = $f->get_items()[6];
+        // $article = $f->get_articles()[6];
 
-        // echo 'title: ' . $item->get_title() . '<br>';
-        // echo 'content: ' . $item->get_content() . '<br>';
-        // echo 'link: ' . $item->get_link() . '<br>';
+        // echo 'title: ' . $article->get_title() . '<br>';
+        // echo 'content: ' . $article->get_content() . '<br>';
+        // echo 'link: ' . $article->get_link() . '<br>';
 
         // // Категории
-        // $categories = $item->get_categories();
+        // $categories = $article->get_categories();
         // echo 'categories: ';
         // foreach ($categories as $category) {
         //     echo $category->get_term() . ', ';
         // }
 
         // // Изображение (enclosure)
-        // if ($enclosure = $item->get_enclosure()) {
+        // if ($enclosure = $article->get_enclosure()) {
         //     echo '<br>image: ' . $enclosure->get_link();
         // }
 

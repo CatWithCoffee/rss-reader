@@ -7,15 +7,15 @@ use Illuminate\Http\Request;
 
 class FavoritesController extends Controller
 {
-    public function toggleFavorite(Request $request, $itemId)
+    public function toggleFavorite(Request $request, $articleId)
     {
         $user = auth()->user();
 
-        if ($user->favorites()->where('item_id', $itemId)->exists()) {
-            $user->favorites()->detach($itemId);
+        if ($user->favorites()->where('article_id', $articleId)->exists()) {
+            $user->favorites()->detach($articleId);
             $isFavorited = false;
         } else {
-            $user->favorites()->attach($itemId);
+            $user->favorites()->attach($articleId);
             $isFavorited = true;
         }
 

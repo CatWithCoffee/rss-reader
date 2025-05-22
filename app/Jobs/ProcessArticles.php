@@ -16,10 +16,10 @@ use Log;
 use Exception;
 use Carbon\Carbon;
 use Vedmant\FeedReader\Facades\FeedReader;
-use App\Models\FeedItem;
+use App\Models\Article;
 use App\Models\Statistics;
 
-class ProcessFeedItems
+class ProcessArticles
 {
     use Queueable,
         Batchable,
@@ -46,42 +46,42 @@ class ProcessFeedItems
      */
     public function handle(): array
     {
-        Log::info("Processing feed: {$this->feed->title}");
-        dump("Processing feed: {$this->feed->title}");
+        Log::info("Processing feed: {$this->feed->id}:{$this->feed->title}");
+        dump("Processing feed: {$this->feed->id}:{$this->feed->title}");
 
-        $items = $this->fetchFeedItems($this->feed);
-        if ($items === null) {
-            dump("No new items to process for feed: {$this->feed->title}");
-            Log::info("No new items to process for feed: {$this->feed->title}");
+        $articles = $this->fetchArticles($this->feed);
+        if ($articles === null) {
+            dump("No new articles to process for feed: {$this->feed->title}");
+            Log::info("No new articles to process for feed: {$this->feed->title}");
             return ['count' => 0, 'skipped' => null];
         }
 
-        $itemsCount = count($items);
-        Log::info("Total items fetched: " . $itemsCount);
+        $articlesCount = count($articles);
+        Log::info("Total articles fetched: " . $articlesCount);
 
         $totalCount = 0;
 
         // Разбиваем элементы на чанки и обрабатываем их
-        foreach (array_chunk($items, 100) as $chunk) {
-            $processedItems = $this->processChunk($chunk);
+        foreach (array_chunk($articles, 100) as $chunk) {
+            $processedArticles = $this->processChunk($chunk);
 
-            if (!empty($processedItems)) {
-                $count = $this->saveItems($processedItems);
+            if (!empty($processedArticles)) {
+                $count = $this->saveArticles($processedArticles);
                 $totalCount += $count;
                 Log::info("Chunk processed: count = {$count}");
             } else {
-                Log::info("All items in the chunk were duplicates.");
+                Log::info("All articles in the chunk were duplicates.");
             }
         }
 
-        $skipped = $itemsCount - $totalCount;
-        Log::info("Feed processing completed: {$this->feed->title}, total items saved: {$totalCount}, skipped: {$skipped}");
-        dump("Completed: {$this->feed->title}, total items saved: {$totalCount}, skipped: {$skipped}");
+        $skipped = $articlesCount - $totalCount;
+        Log::info("Feed processing completed: {$this->feed->title}, total articles saved: {$totalCount}, skipped: {$skipped}");
+        dump("Completed: {$this->feed->title}, total articles saved: {$totalCount}, skipped: {$skipped}");
         $result = ['count' => $totalCount, 'skipped' => $skipped];
         return (array) $result;
     }
 
-    protected function fetchFeedItems($feed)
+    protected function fetchArticles($feed)
     {
         try {
             // 1. Настраиваем запрос с явным указанием поддерживаемых методов сжатия
@@ -165,7 +165,7 @@ class ProcessFeedItems
             $this->updateFeedMetadata($feed, $response, $newContentHash);
 
             // 7. Обработка элементов
-            return $this->processItems($f->get_items(), $feed);
+            return $this->processArticles($f->get_items(), $feed);
 
         } catch (Exception $e) {
             Log::error("Feed processing error {$feed->url}: " . $e->getMessage());
@@ -174,84 +174,84 @@ class ProcessFeedItems
         }
     }
 
-    protected function processItems($items, $feed)
+    protected function processArticles($articles, $feed)
     {
-        return collect($items)
-            ->sortBy(function ($item) {
-                return $item->get_gmdate() ?? $item->get_date();
+        return collect($articles)
+            ->sortBy(function ($article) {
+                return $article->get_gmdate() ?? $article->get_date();
             })
-            ->map(function ($item) use ($feed) {
+            ->map(function ($article) use ($feed) {
                 return [
                     'feed_id' => $feed->id,
-                    'guid' => $item->get_id(),
-                    'title' => $this->cleanText($item->get_title()),
-                    'description' => $this->cleanText($item->get_description()),
-                    'content' => $item->get_description() !== $item->get_content() ? $this->cleanText($item->get_content()) : null,
-                    'link' => $item->get_permalink() ?? $item->get_link(),
-                    'published_at' => Carbon::parse($item->get_local_date())->setTimezone(config('app.timezone'))->toDateTimeString(),
-                    'thumbnail' => $this->get_thumbnail($item),
-                    'authors' => $this->get_authors($item),
-                    'categories' => $this->get_categories($item),
-                    'enclosures' => $this->get_enclosures($item)
+                    'guid' => $article->get_id(),
+                    'title' => $this->cleanText($article->get_title()),
+                    'description' => $this->cleanText($article->get_description()),
+                    'content' => $article->get_description() !== $article->get_content() ? $this->cleanText($article->get_content()) : null,
+                    'link' => $article->get_permalink() ?? $article->get_link(),
+                    'published_at' => Carbon::parse($article->get_local_date())->setTimezone(config('app.timezone'))->toDateTimeString(),
+                    'thumbnail' => $this->get_thumbnail($article),
+                    'authors' => $this->get_authors($article),
+                    'categories' => $this->get_categories($article),
+                    'enclosures' => $this->get_enclosures($article)
                 ];
             })
             ->toArray();
     }
 
 
-    protected function processChunk(array $items)
+    protected function processChunk(array $articles)
     {
         // Сначала преобразуем все элементы
-        $processedItems = array_map(function ($item) {
+        $processedArticles = array_map(function ($article) {
             // Подготовка данных
-            $item['title'] = html_entity_decode($item['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $item['description'] = html_entity_decode($item['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $article['title'] = html_entity_decode($article['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $article['description'] = html_entity_decode($article['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-            $item['authors'] = isset($item['authors']) && is_array($item['authors'])
-                ? json_encode($item['authors'], JSON_UNESCAPED_UNICODE)
+            $article['authors'] = isset($article['authors']) && is_array($article['authors'])
+                ? json_encode($article['authors'], JSON_UNESCAPED_UNICODE)
                 : null;
 
-            $item['categories'] = isset($item['categories']) && is_array($item['categories'])
-                ? json_encode($item['categories'], JSON_UNESCAPED_UNICODE)
+            $article['categories'] = isset($article['categories']) && is_array($article['categories'])
+                ? json_encode($article['categories'], JSON_UNESCAPED_UNICODE)
                 : null;
 
-            $item['enclosures'] = isset($item['enclosures']) && is_array($item['enclosures'])
-                ? json_encode($item['enclosures'], JSON_UNESCAPED_UNICODE)
+            $article['enclosures'] = isset($article['enclosures']) && is_array($article['enclosures'])
+                ? json_encode($article['enclosures'], JSON_UNESCAPED_UNICODE)
                 : null;
 
             // try {
-            //     Log::info("Original published_at: " . $item['published_at']);
+            //     Log::info("Original published_at: " . $article['published_at']);
             //     // Явно указываем часовой пояс при парсинге
-            //     $item['published_at'] = $item['published_at']
-            //         ? Carbon::parse($item['published_at'])->utc()->setTimezone(config('app.timezone'))->toDateTimeString()
+            //     $article['published_at'] = $article['published_at']
+            //         ? Carbon::parse($article['published_at'])->utc()->setTimezone(config('app.timezone'))->toDateTimeString()
             //         : null;
-            //     $parsedTime = Carbon::parse($item['published_at']);
+            //     $parsedTime = Carbon::parse($article['published_at']);
             //     Log::info("Parsed time (UTC): " . $parsedTime->toDateTimeString());
             //     Log::info("Parsed time (Moscow): " . $parsedTime->setTimezone(config('app.timezone'))->toDateTimeString());
             // } catch (Exception $e) {
-            //     Log::warning("Date parsing failed for GUID: " . $item['guid']);
-            //     $item['published_at'] = null;
+            //     Log::warning("Date parsing failed for GUID: " . $article['guid']);
+            //     $article['published_at'] = null;
             // }
 
-            return $item;
-        }, $items);
+            return $article;
+        }, $articles);
 
         // Затем фильтруем дубликаты
-        $filtered = array_filter($processedItems, function ($item) {
-            if (!isset($item['guid']) || is_array($item['guid'])) {
-                Log::warning("Invalid GUID format", ['guid' => $item['guid'] ?? null]);
+        $filtered = array_filter($processedArticles, function ($article) {
+            if (!isset($article['guid']) || is_array($article['guid'])) {
+                Log::warning("Invalid GUID format", ['guid' => $article['guid'] ?? null]);
                 return false;
             }
 
-            return !FeedItem::where('guid', $item['guid'])->exists();
+            return !Article::where('guid', $article['guid'])->exists();
         });
         return $filtered;
     }
 
 
-    protected function saveItems(array $items): int
+    protected function saveArticles(array $articles): int
     {
-        if (empty($items)) {
+        if (empty($articles)) {
             return 0;
         }
 
@@ -259,29 +259,29 @@ class ProcessFeedItems
 
         try {
             // Вставка данных с использованием upsert
-            FeedItem::upsert(
-                $items, // Уже обработанные данные
+            Article::upsert(
+                $articles, // Уже обработанные данные
                 ['guid'], // Уникальные поля
                 ['title', 'description', 'content', 'link', 'published_at', 'thumbnail', 'authors', 'categories', 'enclosures', 'updated_at'] // Поля для обновления
             );
 
             // Подсчёт обработанных элементов
-            $count = count($items);
+            $count = count($articles);
 
             // Обновление статистики фида
             $this->feed->last_fetched_at = now();
-            $this->feed->items_count += $count;
+            $this->feed->articles_count += $count;
             $this->feed->save();
 
             // Обновление статистики приложения
-            Statistics::increment('items_count', $count);
+            Statistics::increment('articles_count', $count);
 
             DB::commit();
 
             return $count;
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error("Error saving feed items: " . $e->getMessage());
+            Log::error("Error saving feed articles: " . $e->getMessage());
             return 0;
         }
     }
@@ -318,49 +318,49 @@ class ProcessFeedItems
         return $text ? strip_tags(html_entity_decode($text)) : null;
     }
 
-    protected function get_thumbnail($item)
+    protected function get_thumbnail($article)
     {
-        return $item->get_thumbnail() ?? $item->get_enclosure()->get_player() ?? $item->get_enclosure()->get_link() ?? null;
+        return $article->get_thumbnail() ?? $article->get_enclosure()->get_player() ?? $article->get_enclosure()->get_link() ?? null;
     }
 
-    protected function get_authors($item)
+    protected function get_authors($article)
     {
-        if (!$item->get_authors())
+        if (!$article->get_authors())
             return null;
         $result = [];
-        foreach ($item->get_authors() as $key => $author) {
-            $result[$key] = $item->get_author($key)->get_name();
+        foreach ($article->get_authors() as $key => $author) {
+            $result[$key] = $article->get_author($key)->get_name();
         }
         return $result;
     }
 
-    protected function get_categories($item)
+    protected function get_categories($article)
     {
-        if (!$item->get_categories())
+        if (!$article->get_categories())
             return null;
         $result = [];
-        foreach ($item->get_categories() as $key => $cat) {
-            $result[$key] = $item->get_category($key)->get_label();
+        foreach ($article->get_categories() as $key => $cat) {
+            $result[$key] = $article->get_category($key)->get_label();
         }
         return $result;
     }
-    protected function get_enclosures($item)
+    protected function get_enclosures($article)
     {
-        if (!$item->get_enclosures())
+        if (!$article->get_enclosures())
             return null;
 
         $result = [];
-        foreach ($item->get_enclosures() as $key => $enc) {
-            $link = $item->get_enclosure($key)->get_player() ?? $item->get_enclosure($key)->get_link();
+        foreach ($article->get_enclosures() as $key => $enc) {
+            $link = $article->get_enclosure($key)->get_player() ?? $article->get_enclosure($key)->get_link();
             $result = null;
-            if ($link == $this->get_thumbnail($item)) {
+            if ($link == $this->get_thumbnail($article)) {
                 // $result[$key] = null;
                 continue;
             }
             $result[$key] = [
-                'link' => $item->get_enclosure($key)->get_player() ?? $item->get_enclosure($key)->get_link(),
-                'type' => $item->get_enclosure($key)->get_type(),
-                'thumbnail' => $item->get_enclosure($key)->get_thumbnail(),
+                'link' => $article->get_enclosure($key)->get_player() ?? $article->get_enclosure($key)->get_link(),
+                'type' => $article->get_enclosure($key)->get_type(),
+                'thumbnail' => $article->get_enclosure($key)->get_thumbnail(),
             ];
         }
         return $result;

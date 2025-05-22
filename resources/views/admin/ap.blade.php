@@ -46,7 +46,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-gray-500">Статьи</p>
-                            <p class="text-2xl font-bold">{{ $stat->items_count }}</p>
+                            <p class="text-2xl font-bold">{{ $stat->articles_count }}</p>
                         </div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
 
         // Данные для графика
         const feedNames = @json($feedNames); // Имена фидов
-        const itemsCount = @json($itemsCount); // Количество записей
+        const articlesCount = @json($articlesCount); // Количество записей
         const feedColors = @json($feedColors); // Цвета фидов
 
         // Создаем график
@@ -80,7 +80,7 @@
                 labels: feedNames, // Имена фидов по оси X
                 datasets: [{
                     label: '', // Название набора данных
-                    data: itemsCount, // Данные по оси Y
+                    data: articlesCount, // Данные по оси Y
                     backgroundColor: feedColors, // Цвет столбцов
                     borderColor: feedColors,  // Цвет границ
                     borderWidth: 0 // Ширина границ

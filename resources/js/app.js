@@ -21,12 +21,12 @@ new MaskInput("[data-maska]", {
 
 import axios from 'axios';
 
-function toggleFavorite(itemId, button) {
-    axios.post(`/favorites/${itemId}`)
+function toggleFavorite(articleId, button) {
+    axios.post(`/favorites/${articleId}`)
         .then(response => {
             // Обновляем текст и иконку кнопки
-            const favoriteText = document.getElementById(`favorite-text-${itemId}`);
-            const favoriteIcon = document.getElementById(`favorite-icon-${itemId}`);
+            const favoriteText = document.getElementById(`favorite-text-${articleId}`);
+            const favoriteIcon = document.getElementById(`favorite-icon-${articleId}`);
 
             if (response.data.isFavorited) {
                 favoriteText.textContent = 'Удалить из избранного';

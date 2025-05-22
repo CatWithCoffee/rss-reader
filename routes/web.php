@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FeedController;
-use App\Http\Controllers\FeedItemController;
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\UserController;
@@ -12,11 +12,11 @@ Route::get('/', function () {
     return redirect(route('dashboard'));
 });
 
-Route::get('/dashboard', [FeedItemController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [ArticleController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/favorites', [FavoritesController::class, 'index'])->name('favorites');
-    Route::post('/favorites/{itemId}', [FavoritesController::class, 'toggleFavorite']);
+    Route::post('/favorites/{articleId}', [FavoritesController::class, 'toggleFavorite']);
 });
 
 Route::middleware('auth')->group(function () {
@@ -38,11 +38,11 @@ Route::middleware(['auth', 'role:admin'])->group(function() {
     Route::get('/admin/edit_feed/{id}', [FeedController::class, 'edit'])->name('admin.edit_feed');
     Route::put('/admin/update_feed/{id}', [FeedController::class, 'update'])->name('admin.update_feed');
 
-    Route::get('/admin/feed_items/{id}', [FeedItemController::class, 'direct'])->name('admin.FeedItems');
-    Route::get('/admin/feed_items/all', [FeedItemController::class, 'directAll'])->name('admin.FeedItems_all');
+    Route::get('/admin/articles/{id}', [ArticleController::class, 'direct'])->name('admin.Articles');
+    Route::get('/admin/articles/all', [ArticleController::class, 'directAll'])->name('admin.Articles_all');
     
-    Route::get('/admin/save_feed_items/{id}', [FeedItemController::class, 'store'])->name('admin.save_FeedItems');
-    Route::get('/admin/save_feed_items/all', [FeedItemController::class, 'storeAll'])->name('admin.save_FeedItems_all');
+    Route::get('/admin/save_articles/{id}', [ArticleController::class, 'store'])->name('admin.save_Articles');
+    Route::get('/admin/save_articles/all', [ArticleController::class, 'storeAll'])->name('admin.save_Articles_all');
 
     Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users');
 });

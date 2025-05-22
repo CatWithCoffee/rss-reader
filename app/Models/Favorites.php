@@ -10,7 +10,7 @@ class Favorites extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function feedItem(){
-        return $this->belongsTo(FeedItem::class);
+    public function Article(){
+        return $this->belongsTo(Article::class);
     }
 }

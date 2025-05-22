@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('feed_items', function (Blueprint $table) {
+        Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('feed_id')->constrained(); // Связь с RSS-каналом
             $table->string('guid')->unique();            // Уникальный ID статьи (из RSS)
@@ -33,6 +33,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('feed__items');
+        Schema::dropIfExists('feed__articles');
     }
 };

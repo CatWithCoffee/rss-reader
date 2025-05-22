@@ -2,7 +2,7 @@
 
 namespace App\Services\Feed;
 
-use App\Models\FeedItem;
+use App\Models\Article;
 
 use app\Models\Feed;
 use app\Models\Statistics;
@@ -13,9 +13,9 @@ use Log;
 use Exception;
 use Carbon\Carbon;
 
-class FeedItemService
+class Articleservice
 {
-    protected $items = [];
+    protected $articles = [];
     protected $source; // collection/feed/null
 
     public static function fromFeed($feed)
@@ -26,52 +26,52 @@ class FeedItemService
     public function loadFeed(Feed $feed)
     {
         $this->source = $feed;
-        $this->items = $this->readFeed($feed);
+        $this->articles = $this->readFeed($feed);
         return $this;
     }
 
-    public static function processItems(array $items): array
+    public static function preprocessArticles(array $articles): array
     {
         // Сначала преобразуем все элементы
-        $processedItems = array_map(function ($item) {
+        $processedArticles = array_map(function ($article) {
             // Подготовка данных
-            $item['title'] = html_entity_decode($item['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $item['description'] = html_entity_decode($item['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $article['title'] = html_entity_decode($article['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $article['description'] = html_entity_decode($article['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-            $item['authors'] = isset($item['authors']) && is_array($item['authors'])
-                ? json_encode($item['authors'], JSON_UNESCAPED_UNICODE)
+            $article['authors'] = isset($article['authors']) && is_array($article['authors'])
+                ? json_encode($article['authors'], JSON_UNESCAPED_UNICODE)
                 : null;
 
-            $item['categories'] = isset($item['categories']) && is_array($item['categories'])
-                ? json_encode($item['categories'], JSON_UNESCAPED_UNICODE)
+            $article['categories'] = isset($article['categories']) && is_array($article['categories'])
+                ? json_encode($article['categories'], JSON_UNESCAPED_UNICODE)
                 : null;
 
-            $item['enclosures'] = isset($item['enclosures']) && is_array($item['enclosures'])
-                ? json_encode($item['enclosures'], JSON_UNESCAPED_UNICODE)
+            $article['enclosures'] = isset($article['enclosures']) && is_array($article['enclosures'])
+                ? json_encode($article['enclosures'], JSON_UNESCAPED_UNICODE)
                 : null;
 
             try {
-                $item['published_at'] = $item['published_at']
-                    ? Carbon::parse($item['published_at'])->toDateTimeString()
+                $article['published_at'] = $article['published_at']
+                    ? Carbon::parse($article['published_at'])->toDateTimeString()
                     : null;
             } catch (Exception $e) {
-                Log::warning("Date parsing failed for GUID: " . $item['guid']);
-                $item['published_at'] = null;
+                Log::warning("Date parsing failed for GUID: " . $article['guid']);
+                $article['published_at'] = null;
             }
 
-            unset($item['color'], $item['feed']);
+            unset($article['color'], $article['feed']);
 
-            return $item;
-        }, $items);
+            return $article;
+        }, $articles);
 
         // Затем фильтруем дубликаты
-        $filtered = array_filter($processedItems, function ($item) {
-            if (!isset($item['guid']) || is_array($item['guid'])) {
-                Log::warning("Invalid GUID format", ['guid' => $item['guid'] ?? null]);
+        $filtered = array_filter($processedArticles, function ($article) {
+            if (!isset($article['guid']) || is_array($article['guid'])) {
+                Log::warning("Invalid GUID format", ['guid' => $article['guid'] ?? null]);
                 return false;
             }
 
-            return !FeedItem::where('guid', $item['guid'])->exists();
+            return !Article::where('guid', $article['guid'])->exists();
         });
         return $filtered;
     }
@@ -83,7 +83,7 @@ class FeedItemService
      */
     public function sort(string $sort_by = 'desc')
     {
-        if (!$this->items) {
+        if (!$this->articles) {
             return $this;
         }
         if (!in_array($sort_by, ['asc', 'desc'])) {
@@ -91,13 +91,13 @@ class FeedItemService
         }
         $data = [];
         if ($sort_by == 'asc') {
-            $data = usort($this->items, function ($a, $b) {
+            $data = usort($this->articles, function ($a, $b) {
                 $dateA = strtotime($a['published_at']);
                 $dateB = strtotime($b['published_at']);
                 return $dateA <=> $dateB;
             });
         } else
-            $data = usort($this->items, function ($a, $b) {
+            $data = usort($this->articles, function ($a, $b) {
                 $dateA = strtotime($a['published_at']);
                 $dateB = strtotime($b['published_at']);
                 return $dateB <=> $dateA;
@@ -105,57 +105,38 @@ class FeedItemService
         return $this;
     }
 
-    // public function paginate(int $perPage = 10)
-    // {
-    //     $currentPage = request()->get('page', 1);
-    //     $pagedData = array_slice($this->items, ($currentPage - 1) * $perPage, $perPage);
-
-    //     $this->items = new \Illuminate\Pagination\LengthAwarePaginator(
-    //         $pagedData,
-    //         count($this->items),
-    //         $perPage,
-    //         $currentPage,
-    //         [
-    //             'path' => request()->url(),
-    //             'query' => request()->query()
-    //         ]
-    //     );
-    //     return $this;
-    // }
-
-
     public function get()
     {
-        return $this->items;
+        return $this->articles;
     }
 
     public function save()
     {
-        if (empty($this->items)) {
+        if (empty($this->articles)) {
             return ['count' => 0, 'skipped' => 0];
         }
         DB::beginTransaction();
 
         try {
-            $processedItems = $this->processItems($this->items);
-            if ($processedItems) {
+            $processedArticles = $this->preprocessArticles($this->articles);
+            if ($processedArticles) {
                 $columns = array_diff(
-                    array_keys(reset($processedItems)),
+                    array_keys(reset($processedArticles)),
                     ['guid', 'created_at']
                 );
 
-                FeedItem::upsert($processedItems, ['guid'], $columns);
+                Article::upsert($processedArticles, ['guid'], $columns);
             }
 
-            $count = count($processedItems);
-            $skipped = count($this->items) - $count;
+            $count = count($processedArticles);
+            $skipped = count($this->articles) - $count;
 
             $feed = $this->source;
             $feed->last_fetched_at = now();
-            $feed->items_count += $count;
+            $feed->articles_count += $count;
             $feed->save();
 
-            Statistics::increment('items_count', $count);
+            Statistics::increment('articles_count', $count);
 
             DB::commit();
 
@@ -212,7 +193,7 @@ class FeedItemService
             $this->updateFeedMetadata($feed, $response, $newContentHash);
 
             // 7. Обработка элементов
-            return $this->processFeedItems($f->get_items(), $feed);
+            return $this->processArticles($f->get_articles(), $feed);
 
         } catch (Exception $e) {
             Log::error("Ошибка обработки фида {$feed->url}: " . $e->getMessage());
@@ -245,21 +226,21 @@ class FeedItemService
         $feed->update($updateData);
     }
 
-    protected function processFeedItems($items, $feed)
+    protected function processArticles($articles, $feed)
     {
-        return collect($items)->map(function ($item) use ($feed) {
+        return collect($articles)->map(function ($article) use ($feed) {
             return [
                 'feed_id' => $feed->id,
-                'guid' => $item->get_id(),
-                'title' => $this->cleanText($item->get_title()),
-                'description' => $this->cleanText($item->get_description()),
-                'content' => $item->get_description() !== $item->get_content() ? $this->cleanText($item->get_content()) : null,
-                'link' => $item->get_permalink() ?? $item->get_link(),
-                'published_at' => $item->get_gmdate() ?? $item->get_date(),
-                'thumbnail' => $this->get_thumbnail($item),
-                'authors' => $this->get_authors($item),
-                'categories' => $this->get_categories($item),
-                'enclosures' => $this->get_enclosures($item),
+                'guid' => $article->get_id(),
+                'title' => $this->cleanText($article->get_title()),
+                'description' => $this->cleanText($article->get_description()),
+                'content' => $article->get_description() !== $article->get_content() ? $this->cleanText($article->get_content()) : null,
+                'link' => $article->get_permalink() ?? $article->get_link(),
+                'published_at' => $article->get_gmdate() ?? $article->get_date(),
+                'thumbnail' => $this->get_thumbnail($article),
+                'authors' => $this->get_authors($article),
+                'categories' => $this->get_categories($article),
+                'enclosures' => $this->get_enclosures($article),
                 'feed' => $feed->title,
                 'color' => $feed->color
             ];
@@ -271,49 +252,49 @@ class FeedItemService
         return $text ? strip_tags(html_entity_decode($text)) : null;
     }
 
-    protected function get_thumbnail($item)
+    protected function get_thumbnail($article)
     {
-        return $item->get_thumbnail() ?? $item->get_enclosure()->get_player() ?? $item->get_enclosure()->get_link() ?? null;
+        return $article->get_thumbnail() ?? $article->get_enclosure()->get_player() ?? $article->get_enclosure()->get_link() ?? null;
     }
 
-    protected function get_authors($item)
+    protected function get_authors($article)
     {
-        if (!$item->get_authors())
+        if (!$article->get_authors())
             return null;
         $result = [];
-        foreach ($item->get_authors() as $key => $author) {
-            $result[$key] = $item->get_author($key)->get_name();
+        foreach ($article->get_authors() as $key => $author) {
+            $result[$key] = $article->get_author($key)->get_name();
         }
         return $result;
     }
 
-    protected function get_categories($item)
+    protected function get_categories($article)
     {
-        if (!$item->get_categories())
+        if (!$article->get_categories())
             return null;
         $result = [];
-        foreach ($item->get_categories() as $key => $cat) {
-            $result[$key] = $item->get_category($key)->get_label();
+        foreach ($article->get_categories() as $key => $cat) {
+            $result[$key] = $article->get_category($key)->get_label();
         }
         return $result;
     }
-    protected function get_enclosures($item)
+    protected function get_enclosures($article)
     {
-        if (!$item->get_enclosures())
+        if (!$article->get_enclosures())
             return null;
 
         $result = [];
-        foreach ($item->get_enclosures() as $key => $enc) {
-            $link = $item->get_enclosure($key)->get_player() ?? $item->get_enclosure($key)->get_link();
+        foreach ($article->get_enclosures() as $key => $enc) {
+            $link = $article->get_enclosure($key)->get_player() ?? $article->get_enclosure($key)->get_link();
             $result = null;
-            if ($link == $this->get_thumbnail($item)) {
+            if ($link == $this->get_thumbnail($article)) {
                 // $result[$key] = null;
                 continue;
             }
             $result[$key] = [
-                'link' => $item->get_enclosure($key)->get_player() ?? $item->get_enclosure($key)->get_link(),
-                'type' => $item->get_enclosure($key)->get_type(),
-                'thumbnail' => $item->get_enclosure($key)->get_thumbnail(),
+                'link' => $article->get_enclosure($key)->get_player() ?? $article->get_enclosure($key)->get_link(),
+                'type' => $article->get_enclosure($key)->get_type(),
+                'thumbnail' => $article->get_enclosure($key)->get_thumbnail(),
             ];
         }
         return $result;

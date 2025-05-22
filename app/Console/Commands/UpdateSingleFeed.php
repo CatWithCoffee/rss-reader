@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessFeedItems;
+use App\Jobs\ProcessArticles;
 use App\Models\Feed;
 use Illuminate\Console\Command;
 use Log;
@@ -21,7 +21,7 @@ class UpdateSingleFeed extends Command
      *
      * @var string
      */
-    protected $description = 'Starts saving items from a single feed';
+    protected $description = 'Starts saving articles from a single feed';
 
     /**
      * Execute the console command.
@@ -46,7 +46,7 @@ class UpdateSingleFeed extends Command
         }
 
         // Запускаем Job для обработки фида
-        ProcessFeedItems::dispatch($feed);
+        ProcessArticles::dispatch($feed);
 
         $this->info("Feed processing started for feed ID {$feedId}.");
         Log::info("Feed processing started for feed ID {$feedId}.");

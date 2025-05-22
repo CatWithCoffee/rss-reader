@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class FeedItem extends Model
+class Article extends Model
 {
     protected $fillable = [
         'feed_id',
@@ -27,7 +27,7 @@ class FeedItem extends Model
         'enclosures' => 'array'
     ];
 
-    protected $table = 'feed_items';
+    protected $table = 'articles';
     
     public function feed()
     {
@@ -35,6 +35,6 @@ class FeedItem extends Model
     }
 
     public function favorited_by(){
-        return $this->belongsToMany(User::class, 'favorites', 'item_id', 'user_id');
+        return $this->belongsToMany(User::class, 'favorites', 'article_id', 'user_id');
     }
 }

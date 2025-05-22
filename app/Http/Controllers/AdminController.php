@@ -10,13 +10,13 @@ class AdminController extends Controller
 {
     public function index(){
         $stat = Statistics::all();
-        $feeds = Feed::orderBy('items_count', 'desc')
+        $feeds = Feed::orderBy('articles_count', 'desc')
             ->take(10)
             ->get();
         $feedNames = $feeds->pluck('title');
-        $itemsCount = $feeds->pluck('items_count');
+        $articlesCount = $feeds->pluck('articles_count');
         $feedColors = $feeds->pluck('color');
 
-        return view('admin.ap')->with(['stat' => $stat[0], 'feedNames' => $feedNames, 'itemsCount' => $itemsCount, 'feedColors' => $feedColors]);
+        return view('admin.ap')->with(['stat' => $stat[0], 'feedNames' => $feedNames, 'articlesCount' => $articlesCount, 'feedColors' => $feedColors]);
     }
 }

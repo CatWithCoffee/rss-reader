@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessFeedItems;
+use App\Jobs\ProcessArticles;
 use App\Models\Feed;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
@@ -23,7 +23,7 @@ class UpdateAllFeeds extends Command
      *
      * @var string
      */
-    protected $description = 'Starts saving items from all feeds';
+    protected $description = 'Starts saving articles from all feeds';
 
     /**
      * Execute the console command.
@@ -43,7 +43,7 @@ class UpdateAllFeeds extends Command
         }
 
         // Создаем массив задач
-        $jobs = $feeds->map(fn($feed) => new ProcessFeedItems($feed))->toArray();
+        $jobs = $feeds->map(fn($feed) => new ProcessArticles($feed))->toArray();
 
         try {
             // Отправляем задачи в пакет

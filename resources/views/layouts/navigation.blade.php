@@ -102,7 +102,7 @@
                         {{ __('Фиды') }}
                     </x-nav-link>
                     
-                    <x-nav-link :href="route('admin.FeedItems_all')" :active="request()->routeIs('admin.FeedItems*')">
+                    <x-nav-link :href="route('admin.Articles_all')" :active="request()->routeIs('admin.Articles*')">
                         {{ __('Статьи') }}
                     </x-nav-link>
                     
@@ -130,7 +130,7 @@
                 <x-responsive-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
                     Фиды
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.FeedItems_all')" :active="request()->routeIs('admin.FeedItems_all')">
+                <x-responsive-nav-link :href="route('admin.Articles_all')" :active="request()->routeIs('admin.Articles_all')">
                     Статьи
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">

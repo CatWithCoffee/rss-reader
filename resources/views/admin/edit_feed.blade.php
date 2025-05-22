@@ -171,7 +171,7 @@
                                 <div>
                                     <x-input-label value="Статистика" />
                                     <div class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                                        <p>Записей: {{ $feed->items_count ?? 0 }}</p>
+                                        <p>Записей: {{ $feed->articles_count ?? 0 }}</p>
                                         <p>Последнее обновление: {{ $feed->last_fetched_at ? \Carbon\Carbon::parse($feed->last_fetched_at)->format('d.m.Y H:i') : 'Никогда' }}</p>
                                     </div>
                                 </div>

@@ -6,14 +6,14 @@
 
             <!-- Список избранных статей -->
             <div class="space-y-4">
-                @foreach ($favorites as $item)
+                @foreach ($favorites as $article)
                     <div class="border-l-4 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-4"
-                        style="border-color: {{ $item->feed->color ?? '#3b82f6' }}; background-color: rgba({{ hex2rgb($item->feed->color ?? '#3b82f6', 0.05) }})">
+                        style="border-color: {{ $article->feed->color ?? '#3b82f6' }}; background-color: rgba({{ hex2rgb($article->feed->color ?? '#3b82f6', 0.05) }})">
 
                         <!-- Изображение (thumbnail) -->
-                        @if($item->thumbnail)
+                        @if($article->thumbnail)
                             <div class="sm:w-48 sm:flex-shrink-0">
-                                <img src="{{ $item->thumbnail }}" alt="{{ $item->title }}"
+                                <img src="{{ $article->thumbnail }}" alt="{{ $article->title }}"
                                     class="w-full h-48 object-cover rounded-lg">
                             </div>
                         @endif
@@ -23,31 +23,31 @@
                             <!-- Заголовок и дата публикации -->
                             <div class="flex justify-between items-start">
                                 <div class="flex-1 mr-4">
-                                    <a href="{{ $item->link }}" target="_blank"
+                                    <a href="{{ $article->link }}" target="_blank"
                                         class="text-lg font-semibold hover:text-blue-600 break-words"
-                                        style="color: {{ $item->feed->color ?? '#3b82f6' }}">
-                                        {{ $item->title }}
+                                        style="color: {{ $article->feed->color ?? '#3b82f6' }}">
+                                        {{ $article->title }}
                                     </a>
                                     <p class="text-xs mt-2 text-gray-500">
-                                        Опубликовано: {{ $item->published_at->diffForHumans() }} ({{ $item->published_at->format('d.m.Y - H:i') }})
+                                        Опубликовано: {{ $article->published_at->diffForHumans() }} ({{ $article->published_at->format('d.m.Y - H:i') }})
                                     </p>
                                 </div>
                             </div>
 
                             <!-- Краткое описание -->
-                            @if($item->description)
+                            @if($article->description)
                                 <p class="text-sm text-gray-600 mt-2 break-words">
-                                    {{ Str::limit(strip_tags($item->description), 200) }}
+                                    {{ Str::limit(strip_tags($article->description), 200) }}
                                 </p>
                             @endif
 
                             <!-- Источник -->
                             <div class="flex items-center my-3">
-                                @if($item->feed->favicon)
-                                    <img src="{{ $item->feed->favicon }}" alt="favicon" class="w-4 h-4 mr-2">
+                                @if($article->feed->favicon)
+                                    <img src="{{ $article->feed->favicon }}" alt="favicon" class="w-4 h-4 mr-2">
                                 @endif
                                 <span class="text-sm text-gray-600">
-                                    Источник: {{ $item->feed->title }}
+                                    Источник: {{ $article->feed->title }}
                                 </span>
                             </div>
 
@@ -55,9 +55,9 @@
                             <div class="mt-auto flex items-center gap-4">
                                 <!-- Кнопка "Читать дальше" -->
                                 <div>
-                                    <a href="{{ $item->link }}" target="_blank"
+                                    <a href="{{ $article->link }}" target="_blank"
                                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:bg-primary-700 transition-colors"
-                                        style="background-color: {{ $item->feed->color ?? '#3b82f6' }}">
+                                        style="background-color: {{ $article->feed->color ?? '#3b82f6' }}">
                                         Читать дальше
                                         <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
@@ -69,12 +69,12 @@
 
                                 <!-- Кнопка удаления из избранного -->
                                 <div>
-                                    <button onclick="toggleFavorite({{ $item->id }}, this)"
+                                    <button onclick="toggleFavorite({{ $article->id }}, this)"
                                         class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                                        <span id="favorite-text-{{ $item->id }}">
-                                            {{ auth()->user() && auth()->user()->favorites->contains($item->id) ? 'Удалить из избранного' : 'Добавить в избранное' }}
+                                        <span id="favorite-text-{{ $article->id }}">
+                                            {{ auth()->user() && auth()->user()->favorites->contains($article->id) ? 'Удалить из избранного' : 'Добавить в избранное' }}
                                         </span>
-                                        <svg id="favorite-icon-{{ $item->id }}" xmlns="http://www.w3.org/2000/svg"
+                                        <svg id="favorite-icon-{{ $article->id }}" xmlns="http://www.w3.org/2000/svg"
                                             class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

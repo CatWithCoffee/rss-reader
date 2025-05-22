@@ -22,7 +22,7 @@
                 <!-- Список фидов -->
                 <div class="space-y-6">
                     <x-secondary-link 
-                        href="{{ route('admin.save_FeedItems_all') }}">
+                        href="{{ route('admin.save_Articles_all') }}">
                         Сканировать всё
                     </x-secondary-link>
                     @foreach ($feeds as $feed)
@@ -67,19 +67,19 @@
                                         <p class="text-gray-700">Язык: {{ strtoupper($feed->language) }}</p>
                                     @endif
                                     
-                                    <p class="text-gray-700">Элементов: {{ $feed->items_count }}</p>
+                                    <p class="text-gray-700">Элементов: {{ $feed->articles_count }}</p>
                                 </div>
                             </div>
 
                             <!-- Действия с фидом -->
                             <div class="flex flex-wrap gap-2">
                                 <x-secondary-link 
-                                    href="{{ route('admin.FeedItems', ['id' => $feed->id]) }}">
+                                    href="{{ route('admin.Articles', ['id' => $feed->id]) }}">
                                     Просмотреть записи
                                 </x-secondary-link>
 
                                 <x-secondary-link 
-                                    href="{{ route('admin.save_FeedItems', ['id' => $feed->id]) }}">
+                                    href="{{ route('admin.save_Articles', ['id' => $feed->id]) }}">
                                     Сканировать
                                 </x-secondary-link>
 
@@ -89,7 +89,7 @@
                                 </x-secondary-link>
                             </div>
                             
-                            <x-input-error :messages="$errors->get('save_FeedItems')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('save_Articles')" class="mt-2" />
                         </div>
                     @endforeach
                 </div>
