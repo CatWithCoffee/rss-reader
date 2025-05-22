@@ -42,7 +42,7 @@ Route::middleware(['auth', 'role:admin'])->group(function() {
     Route::get('/admin/feed_items/all', [FeedItemController::class, 'directAll'])->name('admin.FeedItems_all');
     
     Route::get('/admin/save_feed_items/{id}', [FeedItemController::class, 'store'])->name('admin.save_FeedItems');
-    Route::get('/admin/save_feed_items/all', [FeedItemController::class, 'store_all'])->name('admin.save_FeedItems_all');
+    Route::get('/admin/save_feed_items/all', [FeedItemController::class, 'storeAll'])->name('admin.save_FeedItems_all');
 
     Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users');
 });

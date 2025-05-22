@@ -63,10 +63,35 @@ class FeedItemController extends Controller
     public function index(Request $request)
     {
         $items = FeedItem::with('feed')
-            ->when($request->source, fn($q) => $q->where('feed_id', $request->source))
+            ->when(
+                $request->filled('source'),
+                fn($q) => $q->where('feed_id', $request->source)
+            )
+            ->when(
+                $request->filled('category'),
+                fn($q) => $q->whereRaw(
+                    'JSON_SEARCH(LOWER(categories), "one", LOWER(?)) IS NOT NULL',
+                    [trim($request->category)]
+                )
+            )
+            ->when(
+                $request->filled('search'),
+                fn($q) => $q->where(function ($query) use ($request) {
+                    $query->where('title', 'like', '%' . $request->search . '%')
+                        ->orWhere('description', 'like', '%' . $request->search . '%');
+                })
+            )
             ->latest('published_at')
             ->paginate(24);
 
+        $sources = Feed::has('items')->get();
+
+        return view('dashboard', compact('items', 'sources'));
+    }
+
+    public function showCategory($category)
+    {
+        $items = FeedItem::whereJsonContains('categories', $category)->latest('published_at')->paginate(24);
         $sources = Feed::has('items')->get();
 
         return view('dashboard', compact('items', 'sources'));
@@ -85,12 +110,13 @@ class FeedItemController extends Controller
      */
     public function store($id)
     {
-        if ($id === 'all') return $this->store_all();
-        
+        if ($id === 'all')
+            return $this->storeAll();
+
         try {
             $feed = Feed::findOrFail($id);
 
-            if (!$feed->is_active){
+            if (!$feed->is_active) {
                 return back()->with('error', 'Feed is inactive');
             }
 
@@ -113,7 +139,7 @@ class FeedItemController extends Controller
         }
     }
 
-    public function store_all()
+    public function storeAll()
     {
         try {
             $totalCount = 0;
