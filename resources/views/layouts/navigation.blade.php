@@ -16,13 +16,22 @@
                         {{ __('Главная') }}
                     </x-nav-link>
                     
-                    <x-nav-link :href="route('favorites')" :active="request()->routeIs('favorites')">
-                        {{ __('Избранное') }}
-                    </x-nav-link>
+                    @if (Auth::user())
+                        <x-nav-link :href="route('favorites')" :active="request()->routeIs('favorites')">
+                            {{ __('Избранное') }}
+                        </x-nav-link>
+                    @else
+                        <div class="flex items-center text-sm font-normal">
+                            <a href="{{ route('login') }}" class="underline hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Войдите в аккаунт</a>, чтобы получить доступ к списку избранного
+                            </div>
+                    @endif
+                    @if (Auth::user() && Auth::user()->role == 'admin')
+                        <x-nav-link :href="route('admin')" :active="request()->routeIs('admin') || request()->is('admin/*')">
+                            {{ __('Панель администратора') }}
+                        </x-nav-link>
+                    @endif
                     
-                    <x-nav-link :href="route('admin')" :active="request()->routeIs('admin') || request()->is('admin/*')">
-                        {{ __('Админ панель') }}
-                    </x-nav-link>
                 </div>
             </div>
 
@@ -34,7 +43,7 @@
                             @if(Auth::user())
                                 <div>{{ Auth::user()->name }}</div>
                             @else
-                                <div>{{ __('Account') }}</div>
+                                <div>{{ __('Аккаунт') }}</div>
                             @endif
 
                             <div class="ms-1">
@@ -48,7 +57,7 @@
                     <x-slot name="content">
                         @if(Auth::user())
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            {{ __('Профиль') }}
                         </x-dropdown-link>
 
                         <!-- Authentication -->
@@ -58,15 +67,15 @@
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                {{ __('Выйти') }}
                             </x-dropdown-link>
                         </form>
                         @else
                             <x-dropdown-link :href="route('login')">
-                                {{ __('Login') }}
+                                {{ __('Войти') }}
                             </x-dropdown-link>
                             <x-dropdown-link :href="route('register')">
-                                {{ __('Register') }}
+                                {{ __('Зарегистрироваться') }}
                             </x-dropdown-link>
                         @endif
                     </x-slot>
@@ -115,7 +124,7 @@
                 Избранное
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin')" :active="request()->routeIs('admin')">
-                Админ панель
+                Панель администратора
             </x-responsive-nav-link>
             @if(request()->is('admin*'))
                 <x-responsive-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
@@ -133,13 +142,18 @@
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                @if (Auth::user())
+                    <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+                    <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                @else
+                    <div class="font-medium text-base text-gray-800">Аккаунт</div>
+                @endif
+                
             </div>
 
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                    {{ __('Профиль') }}
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
@@ -149,7 +163,7 @@
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        {{ __('Выйти') }}
                     </x-responsive-nav-link>
                 </form>
             </div>
