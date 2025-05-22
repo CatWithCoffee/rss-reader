@@ -3,10 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Jobs\ProcessFeedItems;
-use Bus;
-use Illuminate\Console\Command;
 use App\Models\Feed;
-use Log;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class UpdateAllFeeds extends Command
 {
@@ -15,7 +16,7 @@ class UpdateAllFeeds extends Command
      *
      * @var string
      */
-    protected $signature = 'app:update-all-feeds';
+    protected $signature = 'feed:update-all';
 
     /**
      * The console command description.
@@ -29,15 +30,38 @@ class UpdateAllFeeds extends Command
      */
     public function handle()
     {
+        Log::info('Starting feed:update-all command');
+
+        // Получаем все активные фиды
         $feeds = Feed::where('is_active', true)->get();
 
-        $batch = Bus::batch(
-            $feeds->map(fn($feed) => new ProcessFeedItems($feed)))
-            ->then(fn() => Log::info('All feeds processed'))
-            ->allowFailures()
-            ->dispatch();
-        
-        $this->info("Feed processing started for all feeds.");
-        Log::info("Feed processing started for all feeds.");
+        // Если фидов нет, выводим сообщение
+        if ($feeds->isEmpty()) {
+            $this->warn('No active feeds found.');
+            Log::info('No active feeds found.');
+            return;
+        }
+
+        // Создаем массив задач
+        $jobs = $feeds->map(fn($feed) => new ProcessFeedItems($feed))->toArray();
+
+        try {
+            // Отправляем задачи в пакет
+            $batch = Bus::batch($jobs)
+                ->then(function () {
+                    Log::info('All feeds processed successfully.');
+                })
+                ->catch(function (Throwable $e) {
+                    Log::error('Error processing feeds: ' . $e->getMessage());
+                })
+                ->allowFailures() // Разрешаем продолжать обработку, даже если одна задача завершится неудачно
+                ->dispatch();
+
+            $this->info("Feed processing started for all feeds.");
+            Log::info("Feed processing started for all feeds. Batch ID: " . $batch->id);
+        } catch (Throwable $e) {
+            $this->error('Failed to start feed processing: ' . $e->getMessage());
+            Log::error('Failed to start feed processing: ' . $e->getMessage());
+        }
     }
 }

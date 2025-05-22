@@ -14,7 +14,7 @@ class UpdateSingleFeed extends Command
      *
      * @var string
      */
-    protected $signature = 'app:update-single-feed {feed_id}';
+    protected $signature = 'feed:update {feed_id}';
 
     /**
      * The console command description.

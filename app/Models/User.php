@@ -46,4 +46,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function favorites(){
+        return $this->belongsToMany(FeedItem::class, 'favorites', 'user_id', 'item_id')
+            ->withTimestamps();
+    }
 }

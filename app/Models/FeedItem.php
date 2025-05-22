@@ -34,4 +34,7 @@ class FeedItem extends Model
         return $this->belongsTo(Feed::class, 'feed_id');
     }
 
+    public function favorited_by(){
+        return $this->belongsToMany(User::class, 'favorites', 'item_id', 'user_id');
+    }
 }

@@ -81,30 +81,61 @@ class ProcessFeedItems
         return (array) $result;
     }
 
-
-
     protected function fetchFeedItems($feed)
     {
         try {
             // 1. Настраиваем запрос с явным указанием поддерживаемых методов сжатия
             $response = Http::withOptions([
-                'decode_content' => true, // Автоматическое распаковывание
-                'force_ip_resolve' => 'v4', // Избегаем проблем с IPv6
+                'decode_content' => false, 
+                'force_ip_resolve' => 'v4', 
             ])->withHeaders([
                         'If-None-Match' => $feed->etag ? '"' . $feed->etag . '"' : null,
-                        'Accept-Encoding' => 'gzip, deflate, br', // Только поддерживаемые методы
+                        'Accept-Encoding' => 'gzip, deflate', // Указываем поддерживаемые методы сжатия
                         'User-Agent' => config('app.name') . '/1.0',
                     ])->timeout(15)->get($feed->url);
 
-            // 2. Обработка возможного brotli-сжатия вручную
-            if ($response->header('Content-Encoding') === 'br') {
-                if (!function_exists('brotli_uncompress')) {
-                    throw new Exception('Требуется расширение brotli для декомпрессии');
+            // 2. Проверяем, что запрос выполнен успешно
+            if (!$response->successful()) {
+                if ($response->status() === 304) {
+                    Log::info('Response status: 304. Feed unchanged');
+                    return null;
                 }
-                $content = brotli_uncompress($response->body());
-            } else {
-                $content = $response->body();
+                throw new Exception('Ошибка при выполнении запроса: ' . $response->status());
             }
+            Log::info('Response status: ' . $response->status());
+
+            //--- 3. Обработка Content-Encoding
+            $contentEncoding = $response->header('Content-Encoding');
+            Log::info("Content-encoding: " . $contentEncoding);
+            $content = $response->body();
+
+            if ($contentEncoding == 'br') {
+                Log::warning('Unaccepted content-encoding: ' . $contentEncoding);
+                return null;
+            }
+
+            // switch ($contentEncoding) {
+            //     case 'br': // Brotli
+            //         if (!function_exists('brotli_uncompress')) {
+            //             throw new Exception('Требуется расширение brotli для декомпрессии');
+            //         }
+            //         $content = brotli_uncompress($content);
+            //         dump($content);
+            //         break;
+
+            //     case 'gzip': // Gzip
+            //         $content = gzdecode($content);
+            //         break;
+
+            //     case 'deflate': // Deflate
+            //         $content = gzinflate($content);
+            //         break;
+
+            //     default: // Без сжатия
+            //         // Ничего не делаем, данные уже готовы
+            //         break;
+            // }
+
 
             // 3. Проверка пустого содержимого
             if (empty($content)) {
@@ -157,17 +188,16 @@ class ProcessFeedItems
                     'description' => $this->cleanText($item->get_description()),
                     'content' => $item->get_description() !== $item->get_content() ? $this->cleanText($item->get_content()) : null,
                     'link' => $item->get_permalink() ?? $item->get_link(),
-                    'published_at' => $item->get_gmdate() ?? $item->get_date(),
+                    'published_at' => Carbon::parse($item->get_local_date())->setTimezone(config('app.timezone'))->toDateTimeString(),
                     'thumbnail' => $this->get_thumbnail($item),
                     'authors' => $this->get_authors($item),
                     'categories' => $this->get_categories($item),
-                    'enclosures' => $this->get_enclosures($item),
-                    'feed' => $feed->title,
-                    'color' => $feed->color
+                    'enclosures' => $this->get_enclosures($item)
                 ];
             })
             ->toArray();
     }
+
 
     protected function processChunk(array $items)
     {
@@ -189,16 +219,19 @@ class ProcessFeedItems
                 ? json_encode($item['enclosures'], JSON_UNESCAPED_UNICODE)
                 : null;
 
-            try {
-                $item['published_at'] = $item['published_at']
-                    ? Carbon::parse($item['published_at'])->toDateTimeString()
-                    : null;
-            } catch (Exception $e) {
-                Log::warning("Date parsing failed for GUID: " . $item['guid']);
-                $item['published_at'] = null;
-            }
-
-            unset($item['color'], $item['feed']);
+            // try {
+            //     Log::info("Original published_at: " . $item['published_at']);
+            //     // Явно указываем часовой пояс при парсинге
+            //     $item['published_at'] = $item['published_at']
+            //         ? Carbon::parse($item['published_at'])->utc()->setTimezone(config('app.timezone'))->toDateTimeString()
+            //         : null;
+            //     $parsedTime = Carbon::parse($item['published_at']);
+            //     Log::info("Parsed time (UTC): " . $parsedTime->toDateTimeString());
+            //     Log::info("Parsed time (Moscow): " . $parsedTime->setTimezone(config('app.timezone'))->toDateTimeString());
+            // } catch (Exception $e) {
+            //     Log::warning("Date parsing failed for GUID: " . $item['guid']);
+            //     $item['published_at'] = null;
+            // }
 
             return $item;
         }, $items);
@@ -214,6 +247,7 @@ class ProcessFeedItems
         });
         return $filtered;
     }
+
 
     protected function saveItems(array $items): int
     {

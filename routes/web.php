@@ -4,7 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FeedItemController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SourceController;
+use App\Http\Controllers\FavoritesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -12,6 +12,11 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [FeedItemController::class, 'index'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/favorites', [FavoritesController::class, 'index'])->name('favorites');
+    Route::post('/favorites/{itemId}', [FavoritesController::class, 'toggleFavorite']);
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -81,7 +81,7 @@
                             <div>
                                 <x-input-label for="description" :value="__('Описание фида')" />
                                 <textarea id="description"
-                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    class="block mt-1 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 rounded-md shadow-sm"
                                     name="description"
                                     rows="3"
                                     placeholder="Краткое описание источника">{{ old('description', $feed->description ?? '') }}</textarea>
@@ -149,7 +149,7 @@
                                 <div class="flex items-start space-x-3">
                                     <div class="flex items-center h-5">
                                         <input id="is_active" name="is_active" type="checkbox"
-                                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 h-4 w-4" 
+                                            class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 h-4 w-4" 
                                             {{ old('is_active', $feed->is_active ?? true) ? 'checked' : '' }}>
                                     </div>
                                     <div class="text-sm">
