@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-12">
+    <div class="py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h1 class="text-2xl font-semibold text-gray-900 mb-6">Управление RSS-фидами</h1>
@@ -23,7 +23,7 @@
                 <div class="space-y-6">
                     <x-secondary-link 
                         href="{{ route('admin.save_FeedItems_all') }}">
-                        Сохранить всё
+                        Сканировать всё
                     </x-secondary-link>
                     @foreach ($feeds as $feed)
                         <div class="bg-gray-50 p-4 rounded-lg shadow">
@@ -75,17 +75,17 @@
                             <div class="flex flex-wrap gap-2">
                                 <x-secondary-link 
                                     href="{{ route('admin.FeedItems', ['id' => $feed->id]) }}">
-                                    Просмотреть элементы
+                                    Просмотреть записи
                                 </x-secondary-link>
 
                                 <x-secondary-link 
                                     href="{{ route('admin.save_FeedItems', ['id' => $feed->id]) }}">
-                                    Сохранить элементы
+                                    Сканировать
                                 </x-secondary-link>
 
                                 <x-secondary-link 
                                     href="{{ route('admin.edit_feed', ['id' => $feed->id]) }}">
-                                    Редактировать фид
+                                    Редактировать
                                 </x-secondary-link>
                             </div>
                             

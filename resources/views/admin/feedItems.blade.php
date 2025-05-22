@@ -1,9 +1,9 @@
 <x-app-layout>
-    <div class="py-8">
+    <div class="py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h1 class="text-xl font-bold text-gray-900 mb-4">Feed Items (Technical View)</h1>
-                <p class="text-sm text-gray-500 mb-6">Total items: {{ $FeedItems->total() }}</p>
+                <h1 class="text-xl font-bold text-gray-900 mb-4">Новости из источника: {{ $feed }} (технический просмотр)</h1>
+                <p class="text-sm text-gray-500 mb-6">Всего статей: {{ $FeedItems->total() }}</p>
 
                 <div class="space-y-6">
                     @foreach ($FeedItems as $item)
@@ -11,13 +11,13 @@
                             <!-- Item Header -->
                             <div class="mb-3">
                                 <a href="{{ $item['link'] }}" 
-                                   class="font-mono text-lg font-semibold break-all hover:text-blue-600" 
-                                   style="color: {{ $item['color'] }}"
-                                   target="_blank">
+                                    class="font-mono text-lg font-semibold break-all hover:text-blue-600" 
+                                    style="color: {{ $item['color'] }}"
+                                    target="_blank">
                                     {{ $item['title'] ?? 'No Title' }}
                                 </a>
                                 <p class="text-xs text-gray-500 mt-1">
-                                    Published: {{ $item['published_at'] ?? 'N/A' }}
+                                    Published: {{ $item['published_at']->format('d.m.Y - H:i') ?? 'N/A' }}
                                 </p>
                             </div>
 

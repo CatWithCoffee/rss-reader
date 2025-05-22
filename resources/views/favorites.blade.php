@@ -29,7 +29,7 @@
                                         {{ $item->title }}
                                     </a>
                                     <p class="text-xs mt-2 text-gray-500">
-                                        Опубликовано: {{ $item->published_at->diffForHumans() }}
+                                        Опубликовано: {{ $item->published_at->diffForHumans() }} ({{ $item->published_at->format('d.m.Y - H:i') }})
                                     </p>
                                 </div>
                             </div>

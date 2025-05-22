@@ -2,8 +2,8 @@
     <div class="py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                <h1 class="text-xl font-bold text-gray-900 mb-4">Все новости (технический просмотр)</h1>
-                <p class="text-sm text-gray-500 mb-6">Всего новостей: {{ $items->total() }}</p>
+                <h1 class="text-xl font-bold text-gray-900 mb-4">Все статьи (технический просмотр)</h1>
+                <p class="text-sm text-gray-500 mb-6">Всего статей: {{ $items->total() }}</p>
 
                 <div class="space-y-6">
                     @foreach ($items as $item)
@@ -19,7 +19,7 @@
                                 </a>
                                 
                                 <span class="text-xs text-gray-500 ml-2 whitespace-nowrap">
-                                    {{ $item->published_at }}
+                                    {{ $item->published_at->format('d.m.Y - H:i') }}
                                 </span>
                             </div>
                             
@@ -105,8 +105,8 @@
                             <div class="mt-3 pt-2 border-t border-gray-100">
                                 <div class="flex flex-wrap gap-4 text-xs text-gray-500">
                                     <span>ID: {{ $item->id }}</span>
-                                    <span>Created: {{ $item->created_at->format('d.m.Y H:i') }}</span>
-                                    <span>Updated: {{ $item->updated_at->format('d.m.Y H:i') }}</span>
+                                    <span>Created: {{ $item->created_at->format('d.m.Y - H:i') }}</span>
+                                    <span>Updated: {{ $item->updated_at->format('d.m.Y -  H:i') }}</span>
                                     @if($item->enclosures)
                                         <span>Enclosures: {{ count($item->enclosures) }}</span>
                                     @endif

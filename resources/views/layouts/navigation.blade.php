@@ -96,6 +96,10 @@
                     <x-nav-link :href="route('admin.FeedItems_all')" :active="request()->routeIs('admin.FeedItems*')">
                         {{ __('Статьи') }}
                     </x-nav-link>
+                    
+                    <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users*')">
+                        {{ __('Пользователи') }}
+                    </x-nav-link>
                 </div>
             </div>
         </div>
@@ -119,6 +123,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.FeedItems_all')" :active="request()->routeIs('admin.FeedItems_all')">
                     Статьи
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
+                    Пользователи
                 </x-responsive-nav-link>
             @endif
         </div>

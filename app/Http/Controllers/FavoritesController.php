@@ -27,7 +27,7 @@ class FavoritesController extends Controller
      */
     public function index()
     {
-        $favorites = auth()->user()->favorites()->paginate(20);
+        $favorites = auth()->user()->favorites()->orderByDesc('created_at')->paginate(20);
 
         return view('favorites')->with('favorites', $favorites);
     }

@@ -25,8 +25,9 @@ class FeedItemController extends Controller
             return $this->directAll();
 
         try {
+            $feed = Feed::findOrFail($id)->title;
             $items = FeedItem::where('feed_id', $id)->orderBy('published_at', 'desc')->paginate(20);
-            return view('admin.FeedItems')->with('FeedItems', $items);
+            return view('admin.FeedItems')->with(['FeedItems' => $items, 'feed' => $feed]);
         } catch (Throwable $th) {
             Log::error(`Direct feed items error: {$th->getMessage()}`);
             return back()->with('error', $th->getMessage());
@@ -64,7 +65,7 @@ class FeedItemController extends Controller
         $items = FeedItem::with('feed')
             ->when($request->source, fn($q) => $q->where('feed_id', $request->source))
             ->latest('published_at')
-            ->paginate(12);
+            ->paginate(24);
 
         $sources = Feed::has('items')->get();
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FeedItemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FavoritesController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -42,6 +43,8 @@ Route::middleware(['auth', 'role:admin'])->group(function() {
     
     Route::get('/admin/save_feed_items/{id}', [FeedItemController::class, 'store'])->name('admin.save_FeedItems');
     Route::get('/admin/save_feed_items/all', [FeedItemController::class, 'store_all'])->name('admin.save_FeedItems_all');
+
+    Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users');
 });
 
 require __DIR__.'/auth.php';

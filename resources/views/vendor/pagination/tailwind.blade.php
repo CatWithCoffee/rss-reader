@@ -73,7 +73,7 @@
                         @if (is_array($element))
                             @foreach ($element as $page => $url)
                                 @if ($page == $paginator->currentPage())
-                                    <span aria-current="page" class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-medium">
+                                    <span aria-current="page" class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-600 text-white font-medium">
                                         {{ $page }}
                                     </span>
                                 @else
