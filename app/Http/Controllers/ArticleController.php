@@ -85,7 +85,6 @@ class ArticleController extends Controller
             ->paginate(24);
 
         $sources = Feed::has('articles')->get();
-
         return view('dashboard', compact('articles', 'sources'));
     }
 

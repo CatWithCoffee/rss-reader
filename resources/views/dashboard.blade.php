@@ -12,17 +12,17 @@
                     <div class="w-full">
                         <form action="{{ route('dashboard') }}" method="GET"
                             class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <!-- Поиск по заголовку -->
+                            <!-- Поиск по тексту -->
                             <div>
                                 <label for="search" class="sr-only">Поиск</label>
-                                <input type="text" name="search" id="search" placeholder="Поиск по заголовку"
+                                <input type="text" name="search" id="search" placeholder="Поиск по тексту"
                                     value="{{ request('search') }}"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                             </div>
 
                             <!-- Фильтр по категориям -->
                             <div>
-                                <label for="category" class="sr-only">Тег</label>
+                                <label for="category" class="sr-only">Категория</label>
                                 <input type="text" name="category" id="category" placeholder="Фильтр по категории"
                                     value="{{ request('category') }}"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
@@ -98,14 +98,14 @@
 
                             <!-- Краткое описание -->
                             @if($article->description)
-                                <p class="text-gray-600 mb-4 {{ isset($article->thumbnail) ? 'line-clamp-3' : '' }}">
+                                <p class="text-gray-600 mb-4 {{ isset($article->thumbnail) ? 'line-clamp-3' : 'line-clamp-[10]' }}">
                                     {{ strip_tags($article->description) }}
                                 </p>
                             @endif
 
                             <!-- Категории -->
                             @if($article->categories && count($article->categories) > 0)
-                                <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="flex flex-wrap gap-2 mb-4">                                    
                                     @foreach($article->categories as $category)
                                         <a href="{{ 'dashboard?' . http_build_query(['category' => $category]) }}">
                                             <span class="px-2 py-1 bg-gray-100 text-xs rounded-full">

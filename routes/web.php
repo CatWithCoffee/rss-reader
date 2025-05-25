@@ -13,6 +13,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [ArticleController::class, 'index'])->name('dashboard');
+Route::get('/categories/search', [ArticleController::class, 'searchCategories'])->name('categories.search');
 
 Route::middleware('auth')->group(function () {
     Route::get('/favorites', [FavoritesController::class, 'index'])->name('favorites');

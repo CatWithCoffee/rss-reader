@@ -8,10 +8,12 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 
 use App\Models\Feed;
+use App\Models\Category;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Http;
 use DB;
+use Str;
 use Log;
 use Exception;
 use Carbon\Carbon;
@@ -32,6 +34,9 @@ class ProcessArticles
     public $timeout = 60;
     public $failOnTimeout = true;
     public $backoff = [5, 10, 15];
+
+    protected $processedCategories = [];
+
 
     /**
      * Create a new job instance.
@@ -86,8 +91,8 @@ class ProcessArticles
         try {
             // 1. Настраиваем запрос с явным указанием поддерживаемых методов сжатия
             $response = Http::withOptions([
-                'decode_content' => false, 
-                'force_ip_resolve' => 'v4', 
+                'decode_content' => false,
+                'force_ip_resolve' => 'v4',
             ])->withHeaders([
                         'If-None-Match' => $feed->etag ? '"' . $feed->etag . '"' : null,
                         'Accept-Encoding' => 'gzip, deflate', // Указываем поддерживаемые методы сжатия
@@ -201,53 +206,85 @@ class ProcessArticles
 
     protected function processChunk(array $articles)
     {
-        // Сначала преобразуем все элементы
-        $processedArticles = array_map(function ($article) {
+        $processedArticles = [];
+
+        foreach ($articles as $article) {
+            // Обрабатываем категории перед подготовкой данных
+            if (isset($article['categories']) && is_array($article['categories'])) {
+                $article['_category_ids'] = $this->processArticleCategories($article['categories']);
+            }
+
             // Подготовка данных
             $article['title'] = html_entity_decode($article['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $article['description'] = html_entity_decode($article['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $article['authors'] = isset($article['authors']) ? json_encode($article['authors'], JSON_UNESCAPED_UNICODE) : null;
+            $article['categories'] = isset($article['categories']) ? json_encode($article['categories'], JSON_UNESCAPED_UNICODE) : null;
+            $article['enclosures'] = isset($article['enclosures']) ? json_encode($article['enclosures'], JSON_UNESCAPED_UNICODE) : null;
 
-            $article['authors'] = isset($article['authors']) && is_array($article['authors'])
-                ? json_encode($article['authors'], JSON_UNESCAPED_UNICODE)
-                : null;
+            $processedArticles[] = $article;
+        }
 
-            $article['categories'] = isset($article['categories']) && is_array($article['categories'])
-                ? json_encode($article['categories'], JSON_UNESCAPED_UNICODE)
-                : null;
-
-            $article['enclosures'] = isset($article['enclosures']) && is_array($article['enclosures'])
-                ? json_encode($article['enclosures'], JSON_UNESCAPED_UNICODE)
-                : null;
-
-            // try {
-            //     Log::info("Original published_at: " . $article['published_at']);
-            //     // Явно указываем часовой пояс при парсинге
-            //     $article['published_at'] = $article['published_at']
-            //         ? Carbon::parse($article['published_at'])->utc()->setTimezone(config('app.timezone'))->toDateTimeString()
-            //         : null;
-            //     $parsedTime = Carbon::parse($article['published_at']);
-            //     Log::info("Parsed time (UTC): " . $parsedTime->toDateTimeString());
-            //     Log::info("Parsed time (Moscow): " . $parsedTime->setTimezone(config('app.timezone'))->toDateTimeString());
-            // } catch (Exception $e) {
-            //     Log::warning("Date parsing failed for GUID: " . $article['guid']);
-            //     $article['published_at'] = null;
-            // }
-
-            return $article;
-        }, $articles);
-
-        // Затем фильтруем дубликаты
-        $filtered = array_filter($processedArticles, function ($article) {
-            if (!isset($article['guid']) || is_array($article['guid'])) {
-                Log::warning("Invalid GUID format", ['guid' => $article['guid'] ?? null]);
-                return false;
-            }
-
+        return array_filter($processedArticles, function ($article) {
             return !Article::where('guid', $article['guid'])->exists();
         });
-        return $filtered;
     }
 
+    protected function processArticleCategories(array $categories): array
+    {
+        $categoryIds = [];
+
+        foreach ($categories as $originalName) {
+            // Разделяем составные категории
+            $subCategories = preg_split('/[\/,;|]+/', $originalName);
+
+            foreach ($subCategories as $name) {
+                $name = $this->normalizeCategoryName($name);
+                if (empty($name))
+                    continue;
+
+                // Проверяем существование категории (без учета регистра)
+                $normalizedName = mb_strtolower($name);
+
+                if (!isset($this->processedCategories[$normalizedName])) {
+                    try {
+                        $category = Category::firstOrCreate(
+                            ['name' => $name],
+                            ['slug' => $this->generateCategorySlug($name)]
+                        );
+                        $this->processedCategories[$normalizedName] = $category->id;
+                    } catch (Exception $e) {
+                        Log::error("Error creating category '{$name}': " . $e->getMessage());
+                        continue;
+                    }
+                }
+
+                $categoryIds[] = $this->processedCategories[$normalizedName];
+            }
+        }
+
+        return array_unique($categoryIds);
+    }
+
+    protected function normalizeCategoryName(string $name): string
+    {
+        $name = trim($name, '", ');
+        $name = preg_replace('/\s+/', ' ', $name);
+
+        return mb_convert_case(mb_substr($name, 0, 1), MB_CASE_TITLE, 'UTF-8') . mb_strtolower(mb_substr($name, 1));
+    }
+
+    protected function generateCategorySlug(string $name): string
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (Category::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        return $slug;
+    }
 
     protected function saveArticles(array $articles): int
     {
@@ -258,22 +295,46 @@ class ProcessArticles
         DB::beginTransaction();
 
         try {
-            // Вставка данных с использованием upsert
+            // 1. Сохраняем статьи
+            $articlesForUpsert = array_map(function ($article) {
+                unset($article['_category_ids']);
+                return $article;
+            }, $articles);
+
             Article::upsert(
-                $articles, // Уже обработанные данные
-                ['guid'], // Уникальные поля
-                ['title', 'description', 'content', 'link', 'published_at', 'thumbnail', 'authors', 'categories', 'enclosures', 'updated_at'] // Поля для обновления
+                $articlesForUpsert,
+                ['guid'],
+                ['title', 'description', 'content', 'link', 'published_at', 'thumbnail', 'authors', 'enclosures', 'updated_at']
             );
 
-            // Подсчёт обработанных элементов
-            $count = count($articles);
+            // 2. Обрабатываем связи с категориями
+            foreach ($articles as $articleData) {
+                if (!empty($articleData['_category_ids'])) {
+                    $article = Article::where('guid', $articleData['guid'])->first();
+                    if ($article) {
+                        // Удаляем старые связи и добавляем новые
+                        DB::table('article_category_pivot')
+                            ->where('article_id', $article->id)
+                            ->delete();
 
-            // Обновление статистики фида
+                        $insertData = array_map(function ($categoryId) use ($article) {
+                            return [
+                                'article_id' => $article->id,
+                                'category_id' => $categoryId
+                            ];
+                        }, $articleData['_category_ids']);
+
+                        DB::table('article_category_pivot')->insert($insertData);
+                    }
+                }
+            }
+
+            // 3. Обновляем статистику
+            $count = count($articles);
             $this->feed->last_fetched_at = now();
             $this->feed->articles_count += $count;
             $this->feed->save();
 
-            // Обновление статистики приложения
             Statistics::increment('articles_count', $count);
 
             DB::commit();
@@ -285,8 +346,6 @@ class ProcessArticles
             return 0;
         }
     }
-
-
 
     protected function feedUnchanged($feed, $response, $newHash): bool
     {

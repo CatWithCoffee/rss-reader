@@ -3,22 +3,6 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Карточки со статистикой -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Карточка пользователей -->
-                <div class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center">
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500">Пользователи</p>
-                            <p class="text-2xl font-bold">{{ $stat->users_count }}</p>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Карточка фидов -->
                 <div class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                     <div class="flex items-center">
@@ -47,6 +31,22 @@
                         <div class="ml-4">
                             <p class="text-gray-500">Статьи</p>
                             <p class="text-2xl font-bold">{{ $stat->articles_count }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Карточка пользователей -->
+                <div class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Пользователи</p>
+                            <p class="text-2xl font-bold">{{ $stat->users_count }}</p>
                         </div>
                     </div>
                 </div>
