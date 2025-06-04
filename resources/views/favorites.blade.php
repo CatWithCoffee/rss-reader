@@ -7,8 +7,7 @@
             <!-- Список избранных статей -->
             <div class="space-y-4">
                 @foreach ($favorites as $article)
-                    <div class="border-l-4 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-4"
-                        style="border-color: {{ $article->feed->color ?? '#3b82f6' }}; background-color: rgba({{ hex2rgb($article->feed->color ?? '#3b82f6', 0.05) }})">
+                    <div class="bg-white border p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-4">
 
                         <!-- Изображение (thumbnail) -->
                         @if($article->thumbnail)
@@ -29,7 +28,8 @@
                                         {{ $article->title }}
                                     </a>
                                     <p class="text-xs mt-2 text-gray-500">
-                                        Опубликовано: {{ $article->published_at->diffForHumans() }} ({{ $article->published_at->format('d.m.Y - H:i') }})
+                                        Опубликовано: {{ $article->published_at->diffForHumans() }}
+                                        ({{ $article->published_at->format('d.m.Y - H:i') }})
                                     </p>
                                 </div>
                             </div>
@@ -37,7 +37,7 @@
                             <!-- Краткое описание -->
                             @if($article->description)
                                 <p class="text-sm text-gray-600 mt-2 break-words">
-                                    {{ Str::limit(strip_tags($article->description), 200) }}
+                                    {{ Str::limit(strip_tags($article->description), 400) }}
                                 </p>
                             @endif
 
@@ -56,7 +56,7 @@
                                 <!-- Кнопка "Читать дальше" -->
                                 <div>
                                     <a href="{{ $article->link }}" target="_blank"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:bg-primary-700 transition-colors"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:shadow-md transition-colors"
                                         style="background-color: {{ $article->feed->color ?? '#3b82f6' }}">
                                         Читать дальше
                                         <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none"
@@ -69,15 +69,20 @@
 
                                 <!-- Кнопка удаления из избранного -->
                                 <div>
-                                    <button onclick="toggleFavorite({{ $article->id }}, this)"
+                                    <button data-favorite-button data-article-id="{{ $article->id }}"
                                         class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                                         <span id="favorite-text-{{ $article->id }}">
                                             {{ auth()->user() && auth()->user()->favorites->contains($article->id) ? 'Удалить из избранного' : 'Добавить в избранное' }}
                                         </span>
                                         <svg id="favorite-icon-{{ $article->id }}" xmlns="http://www.w3.org/2000/svg"
                                             class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            @if(auth()->user() && auth()->user()->favorites->contains($article->id))
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7" />
+                                            @else
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            @endif
                                         </svg>
                                     </button>
                                 </div>

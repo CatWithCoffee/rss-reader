@@ -129,8 +129,7 @@
                             <div class="mt-auto flex items-center gap-4">
                                 <!-- Кнопка "Читать полностью" -->
                                 <a href="{{ $article->link }}" target="_blank" rel="noopener noreferrer"
-                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:bg-primary-700 transition-colors"
-                                    style="background-color: {{ $article->feed->color ?? '#3b82f6' }}">
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 transition ease-in-out duration-150">
                                     Читать дальше
                                     <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
@@ -141,15 +140,20 @@
 
                                 <!-- Кнопка "Добавить в избранное" -->
                                 @if (Auth::user())
-                                    <button onclick="toggleFavorite({{ $article->id }}, this)"
+                                    <button data-favorite-button data-article-id="{{ $article->id }}"
                                         class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                                         <span id="favorite-text-{{ $article->id }}">
                                             {{ auth()->user() && auth()->user()->favorites->contains($article->id) ? 'Удалить из избранного' : 'Добавить в избранное' }}
                                         </span>
                                         <svg id="favorite-icon-{{ $article->id }}" xmlns="http://www.w3.org/2000/svg"
                                             class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            @if(auth()->user() && auth()->user()->favorites->contains($article->id))
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7" />
+                                            @else
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            @endif
                                         </svg>
                                     </button>
                                 @endif
@@ -166,76 +170,4 @@
             </div>
         </div>
     </div>
-    <script>
-        document.getElementById('sourceSearch').addEventListener('input', function () {
-            const input = this;
-            const datalist = document.getElementById('sourcesList');
-            const hiddenInput = document.getElementById('sourceId');
-
-            // Находим соответствующую опцию
-            const option = Array.from(datalist.options)
-                .find(opt => opt.value.toLowerCase() === input.value.toLowerCase());
-
-            // Устанавливаем значение hidden-поля
-            hiddenInput.value = option ? option.dataset.value : '';
-
-            // Если точного совпадения нет, очищаем hidden-поле
-            if (!option && input.value === '') {
-                hiddenInput.value = '';
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const categorySearch = document.getElementById('categorySearch');
-            const categoriesList = document.getElementById('categoriesList');
-
-            // Функция debounce
-            function debounce(func, wait) {
-                let timeout;
-                return function () {
-                    const context = this, args = arguments;
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => func.apply(context, args), wait);
-                };
-            }
-
-            // Обработчик ввода
-            categorySearch.addEventListener('input', debounce(function (e) {
-                const query = e.target.value.trim();
-                console.log('Input:', query); // Отладочное сообщение
-
-                if (query.length >= 2) {
-                    console.log('Fetching categories...');
-
-                    fetch(`/dashboard/search?query=${encodeURIComponent(query)}`)
-                        .then(response => {
-                            console.log('Response status:', response.status);
-                            if (!response.ok) throw new Error('Network response was not ok');
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Received data:', data);
-                            updateCategoriesList(data);
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                        });
-                } else {
-                    categoriesList.innerHTML = '';
-                }
-            }, 300));
-
-            // Обновление списка категорий
-            function updateCategoriesList(categories) {
-                categoriesList.innerHTML = '';
-                console.log('Updating with:', categories);
-
-                categories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category; // Используем имя категории
-                    categoriesList.appendChild(option);
-                });
-            }
-        });
-    </script>
 </x-app-layout>
