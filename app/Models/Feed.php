@@ -31,4 +31,9 @@ class Feed extends Model
     {
         return $this->hasMany(Article::class);
     }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
 }

@@ -2,7 +2,7 @@
     <div class="py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h1 class="text-xl font-bold text-gray-900 mb-4">Новости из источника: {{ $feed }} (технический просмотр)</h1>
+                <h1 class="text-2xl font-semibold text-gray-900 mb-6">Новости из источника: {{ $feed }} (технический просмотр)</h1>
                 <p class="text-sm text-gray-500 mb-6">Всего статей: {{ $articles->total() }}</p>
 
                 <div class="space-y-6">

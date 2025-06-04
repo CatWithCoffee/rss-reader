@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Feed;
 use App\Models\Article;
 
@@ -63,29 +64,39 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $articles = Article::with('feed')
-            ->when(
-                $request->filled('source'),
-                fn($q) => $q->where('feed_id', $request->source)
-            )
-            ->when(
-                $request->filled('category'),
-                fn($q) => $q->whereRaw(
-                    'JSON_SEARCH(LOWER(categories), "one", LOWER(?)) IS NOT NULL',
-                    [trim($request->category)]
-                )
-            )
-            ->when(
-                $request->filled('search'),
-                fn($q) => $q->where(function ($query) use ($request) {
+            ->when($request->filled('source'), function ($q) use ($request) {
+                return $q->where('feed_id', $request->source);
+            })
+            ->when($request->filled('category'), function ($q) use ($request) {
+                return $q->whereHas('categories', function ($query) use ($request) {
+                    $query->where('name', $request->category); // Фильтр по имени
+                });
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                return $q->where(function ($query) use ($request) {
                     $query->where('title', 'like', '%' . $request->search . '%')
                         ->orWhere('description', 'like', '%' . $request->search . '%');
-                })
-            )
+                });
+            })
             ->latest('published_at')
             ->paginate(24);
 
         $sources = Feed::has('articles')->get();
-        return view('dashboard', compact('articles', 'sources'));
+        $categories = Category::has('articles')->get();
+
+        return view('dashboard', compact('articles', 'sources', 'categories'));
+    }
+
+    public function searchCategories(Request $request)
+    {
+        $query = $request->input('query', '');
+
+        $categories = Category::where('name', 'like', "%{$query}%")
+            ->limit(20)
+            ->pluck('name')
+            ->toArray(); // Явное преобразование в массив
+
+        return response()->json($categories);
     }
 
     public function showCategory($category)
@@ -149,7 +160,7 @@ class ArticleController extends Controller
             foreach ($feeds as $feed) {
                 Log::info("Processing feed: " . $feed->url);
 
-                $result = ProcessArticles::dispatchSync($feed);
+                $result = ProcessArticles::dispatch($feed);
 
                 if (!is_array($result) || !isset($result['count'])) {
                     throw new Exception("Invalid result format from ProcessArticles job for feed {$feed->url}.");

@@ -12,24 +12,29 @@
                     <div class="w-full">
                         <form action="{{ route('dashboard') }}" method="GET"
                             class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <!-- Поиск по тексту -->
                             <div>
-                                <label for="search" class="sr-only">Поиск</label>
-                                <input type="text" name="search" id="search" placeholder="Поиск по тексту"
+                                <x-input-label for="search" :value="__('Поиск')" />
+                                <input type="text" name="search" id="search" placeholder="Заголовок/содержимое"
                                     value="{{ request('search') }}"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                             </div>
 
-                            <!-- Фильтр по категориям -->
                             <div>
-                                <label for="category" class="sr-only">Категория</label>
-                                <input type="text" name="category" id="category" placeholder="Фильтр по категории"
-                                    value="{{ request('category') }}"
+                                <x-input-label for="category" :value="__('Категория')" />
+                                <input type="text" name="category" id="categorySearch"
+                                    placeholder="Начните вводить название категории" value="{{ request('category') }}"
+                                    list="categoriesList"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+
+                                <datalist id="categoriesList">
+                                    @if(request('category'))
+                                        <option value="{{ request('category') }}">
+                                    @endif
+                                </datalist>
                             </div>
 
                             <div>
-                                <label for="sourceSearch" class="sr-only">Поиск источника</label>
+                                <x-input-label for="source_search" :value="__('Источник')" />
                                 <input list="sourcesList" id="sourceSearch" name="source_search"
                                     placeholder="Начните вводить название..."
                                     value="{{ $sources->where('id', request('source'))->first()->title ?? '' }}"
@@ -46,10 +51,10 @@
 
                             <!-- Кнопки -->
                             <div class="flex gap-2">
-                                <x-primary-button type="submit">Поиск</x-primary-button>
-                                @if(request()->has('search') || request()->has('tag') || request()->has('source'))
+                                <x-primary-button type="submit" class="md:mt-5">Поиск</x-primary-button>
+                                @if(request()->has('search') || request()->has('category') || request()->has('source'))
                                     <a href="{{ route('dashboard') }}"
-                                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        class="md:mt-5 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                                         Сбросить
                                     </a>
                                 @endif
@@ -67,7 +72,8 @@
                         <!-- Изображение -->
                         @if($article->thumbnail)
                             <div class="h-48 overflow-hidden">
-                                <img src="{{ $article->thumbnail }}" alt="{{ $article->title }}" class="w-full h-full object-cover">
+                                <img src="{{ $article->thumbnail }}" alt="{{ $article->title }}"
+                                    class="w-full h-full object-cover">
                             </div>
                         @endif
 
@@ -79,11 +85,13 @@
                                     @if($article->feed->favicon)
                                         <img src="{{ $article->feed->favicon }}" alt="favicon" class="w-4 h-4 mr-2">
                                     @endif
-                                    <span class="text-sm font-medium" style="color: {{ $article->feed->color ?? '#3b82f6' }}">
+                                    <span class="text-sm font-medium"
+                                        style="color: {{ $article->feed->color ?? '#3b82f6' }}">
                                         {{ $article->feed->title }}
                                     </span>
                                 </div>
-                                <time datetime="{{ $article->published_at->toIso8601String() }}" class="text-sm text-gray-500">
+                                <time datetime="{{ $article->published_at->toIso8601String() }}"
+                                    class="text-sm text-gray-500">
                                     {{ $article->published_at->diffForHumans() }}
                                 </time>
                             </div>
@@ -98,14 +106,15 @@
 
                             <!-- Краткое описание -->
                             @if($article->description)
-                                <p class="text-gray-600 mb-4 {{ isset($article->thumbnail) ? 'line-clamp-3' : 'line-clamp-[10]' }}">
+                                <p
+                                    class="text-gray-600 mb-4 {{ isset($article->thumbnail) ? 'line-clamp-3' : 'line-clamp-[10]' }}">
                                     {{ strip_tags($article->description) }}
                                 </p>
                             @endif
 
                             <!-- Категории -->
                             @if($article->categories && count($article->categories) > 0)
-                                <div class="flex flex-wrap gap-2 mb-4">                                    
+                                <div class="flex flex-wrap gap-2 mb-4">
                                     @foreach($article->categories as $category)
                                         <a href="{{ 'dashboard?' . http_build_query(['category' => $category]) }}">
                                             <span class="px-2 py-1 bg-gray-100 text-xs rounded-full">
@@ -173,6 +182,59 @@
             // Если точного совпадения нет, очищаем hidden-поле
             if (!option && input.value === '') {
                 hiddenInput.value = '';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const categorySearch = document.getElementById('categorySearch');
+            const categoriesList = document.getElementById('categoriesList');
+
+            // Функция debounce
+            function debounce(func, wait) {
+                let timeout;
+                return function () {
+                    const context = this, args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            }
+
+            // Обработчик ввода
+            categorySearch.addEventListener('input', debounce(function (e) {
+                const query = e.target.value.trim();
+                console.log('Input:', query); // Отладочное сообщение
+
+                if (query.length >= 2) {
+                    console.log('Fetching categories...');
+
+                    fetch(`/dashboard/search?query=${encodeURIComponent(query)}`)
+                        .then(response => {
+                            console.log('Response status:', response.status);
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Received data:', data);
+                            updateCategoriesList(data);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                } else {
+                    categoriesList.innerHTML = '';
+                }
+            }, 300));
+
+            // Обновление списка категорий
+            function updateCategoriesList(categories) {
+                categoriesList.innerHTML = '';
+                console.log('Updating with:', categories);
+
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category; // Используем имя категории
+                    categoriesList.appendChild(option);
+                });
             }
         });
     </script>

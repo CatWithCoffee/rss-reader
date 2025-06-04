@@ -13,6 +13,12 @@ return new class extends Migration {
         Schema::create('feeds', function (Blueprint $table) {
             // Основные поля
             $table->id();
+
+            $table->foreignId('order_id')
+                ->nullable()
+                ->constrained()
+                ->onDelete('set null');
+
             $table->string('title');
             $table->string('url')->unique();
             $table->string('site_url');

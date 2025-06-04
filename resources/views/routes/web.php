@@ -14,8 +14,10 @@ Route::get('/', function () {
     return redirect(route('dashboard'));
 });
 
+Route::get('/dashboard/search', [ArticleController::class, 'searchCategories'])
+    ->name('dashboard.search');
 Route::get('/dashboard', [ArticleController::class, 'index'])->name('dashboard');
-Route::get('/dashboard/search', [ArticleController::class, 'searchCategories'])->name('dashboard.search');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/favorites', [FavoritesController::class, 'index'])->name('favorites');

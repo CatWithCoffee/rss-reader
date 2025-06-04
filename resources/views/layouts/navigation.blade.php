@@ -20,6 +20,9 @@
                         <x-nav-link :href="route('favorites')" :active="request()->routeIs('favorites')">
                             {{ __('Избранное') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('orders')" :active="request()->routeIs('orders')">
+                            {{ __('Добавить источник') }}
+                        </x-nav-link>
                     @else
                         <div class="flex items-center text-sm font-normal">
                             <a href="{{ route('login') }}" class="underline hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -109,6 +112,10 @@
                     <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users*')">
                         {{ __('Пользователи') }}
                     </x-nav-link>
+                    
+                    <x-nav-link :href="route('admin.orders')" :active="request()->routeIs('admin.orders*')">
+                        {{ __('Заявки') }}
+                    </x-nav-link>
                 </div>
             </div>
         </div>
@@ -120,23 +127,39 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 Главная
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('favorites')" :active="request()->routeIs('favorites')">
-                Избранное
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin')" :active="request()->routeIs('admin')">
-                Панель администратора
-            </x-responsive-nav-link>
-            @if(request()->is('admin*'))
-                <x-responsive-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
-                    Фиды
+            @if (Auth::user())
+                <x-responsive-nav-link :href="route('favorites')" :active="request()->routeIs('favorites')">
+                    Избранное
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.Articles_all')" :active="request()->routeIs('admin.Articles_all')">
-                    Статьи
+                <x-responsive-nav-link :href="route('orders')" :active="request()->routeIs('orders')">
+                    Добавить источник
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
-                    Пользователи
-                </x-responsive-nav-link>
+            @else
+                <div class="font-medium text-sm text-gray-800 px-4 py-2">
+                    <a href="{{ route('login') }}" class="underline hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Войдите в аккаунт</a>, чтобы получить доступ к списку избранного
+                </div>
             @endif
+            @if (Auth::user() && Auth::user()->role == 'admin')
+                <x-responsive-nav-link :href="route('admin')" :active="request()->routeIs('admin')">
+                    Панель администратора
+                </x-responsive-nav-link>
+                @if(request()->is('admin*'))
+                    <x-responsive-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
+                        Фиды
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.Articles_all')" :active="request()->routeIs('admin.Articles_all')">
+                        Статьи
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
+                        Пользователи
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.orders')" :active="request()->routeIs('admin.orders*')">
+                        Заявки
+                    </x-responsive-nav-link>
+                @endif
+            @endif
+            
         </div>
 
         <!-- Responsive Settings Options -->

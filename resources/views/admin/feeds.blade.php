@@ -93,6 +93,7 @@
                         </div>
                     @endforeach
                 </div>
+                {{$feeds->links()}}
             </div>
         </div>
     </div>

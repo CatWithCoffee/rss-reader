@@ -18,7 +18,7 @@ class FeedController extends Controller
      */
     public function index()
     {
-        $feeds = Feed::all();
+        $feeds = Feed::paginate(10);
         return view('admin.feeds')->with('feeds', $feeds);
     }
 
@@ -35,10 +35,8 @@ class FeedController extends Controller
      */
     public function store(Request $request)
     {
-        ///добавить выбор категории или категорий источника
-
         $validator = Validator::make($request->all(), [
-            'url' => ['required', 'max:255', new ValidRssFeed()],
+            'url' => ['required', 'max:255', new ValidRssFeed(), 'unique:'.Feed::class],
         ]);
         
         if ($validator->fails()){

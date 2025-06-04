@@ -4,7 +4,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <!-- Заголовок и кнопки -->
                 <div class="px-6 py-4 border-b flex justify-between items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">Редактирование фида</h1>
+                    <h1 class="text-2xl font-semibold text-gray-900 mb-6">Редактирование фида</h1>
                     <div class="flex space-x-2">
                         <x-secondary-link href="{{ route('admin.feeds') }}">
                             Назад к списку

@@ -54,7 +54,7 @@
 
             <!-- Диаграмма -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h2 class="text-xl font-bold mb-4">Соотношение количества записей в фидах</h2>
+                <h2 class="text-xl font-bold mb-4 mx-[40%]">Самые большие фиды</h2>
                 <div class="mt-6">
                     <!-- Контейнер для графика -->
                     <canvas id="feedChart" class="h-64"></canvas>
