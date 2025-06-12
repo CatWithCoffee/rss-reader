@@ -30,10 +30,17 @@
                                     <img src="{{ $order->favicon }}" alt="favicon" class="w-5 h-5">
                                 @endif
                                 <div>
-                                    <a href="{{ $order->url }}" target="_blank"
-                                        class="text-lg font-medium text-blue-600 hover:text-blue-800">
-                                        {{ $order->title ?: 'Без названия' }}
-                                    </a>
+                                    @if($order->status === 'accepted' && isset($order->feed))
+                                        <a href="{{ route('dashboard', ['source' => $order->feed->id]) }}" 
+                                           class="text-lg font-medium text-blue-600 hover:text-blue-800">
+                                            {{ $order->title ?: 'Без названия' }}
+                                        </a>
+                                    @else
+                                        <a href="{{ $order->url }}" target="_blank"
+                                           class="text-lg font-medium text-blue-600 hover:text-blue-800">
+                                            {{ $order->title ?: 'Без названия' }}
+                                        </a>
+                                    @endif
                                     <p class="text-sm text-gray-600 line-clamp-1">{{ $order->description }}</p>
                                 </div>
                             </div>

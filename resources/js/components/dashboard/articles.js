@@ -33,7 +33,6 @@ export class Articles {
             })
             .catch(error => {
                 console.error('Ошибка:', error);
-                // Можно добавить уведомление об ошибке
             });
     }
 }

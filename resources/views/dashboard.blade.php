@@ -35,7 +35,7 @@
 
                             <div>
                                 <x-input-label for="source_search" :value="__('Источник')" />
-                                <input list="sourcesList" id="sourceSearch" name="source_search"
+                                <input list="sourcesList" id="sourceSearch"
                                     placeholder="Начните вводить название..."
                                     value="{{ $sources->where('id', request('source'))->first()->title ?? '' }}"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
