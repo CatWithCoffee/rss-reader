@@ -4,7 +4,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <!-- Заголовок и кнопки -->
                 <div class="px-6 py-4 border-b flex justify-between items-center">
-                    <h1 class="text-2xl font-semibold text-gray-900 mb-6">Редактирование фида</h1>
+                    <h1 class="text-2xl font-semibold text-gray-900 mb-6">Редактирование источника</h1>
                     <div class="flex space-x-2">
                         <x-secondary-link href="{{ route('admin.feeds') }}">
                             Назад к списку
@@ -24,7 +24,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Название -->
                                 <div>
-                                    <x-input-label for="title" :value="__('Название фида*')" />
+                                    <x-input-label for="title" :value="__('Название*')" />
                                     <x-text-input id="title" class="block mt-1 w-full" type="text" name="title"
                                         :value="old('title', $feed->title ?? '')" required autofocus 
                                         placeholder="Название источника"/>
@@ -33,7 +33,7 @@
 
                                 <!-- URL ленты -->
                                 <div>
-                                    <x-input-label for="url" :value="__('URL RSS/Atom фида*')" />
+                                    <x-input-label for="url" :value="__('URL RSS/Atom*')" />
                                     <x-text-input id="url" class="block mt-1 w-full" type="url" name="url"
                                         :value="old('url', $feed->url ?? '')" required 
                                         placeholder="https://example.com/feed.xml"/>
@@ -79,7 +79,7 @@
 
                             <!-- Описание -->
                             <div>
-                                <x-input-label for="description" :value="__('Описание фида')" />
+                                <x-input-label for="description" :value="__('Описание')" />
                                 <textarea id="description"
                                     class="block mt-1 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 rounded-md shadow-sm"
                                     name="description"
@@ -154,7 +154,7 @@
                                     </div>
                                     <div class="text-sm">
                                         <x-input-label for="is_active" :value="__('Активный источник')" />
-                                        <p class="text-gray-500">Если отключено, фид не будет обновляться</p>
+                                        <p class="text-gray-500">Если отключено, источник не будет обновляться</p>
                                     </div>
                                 </div>
 

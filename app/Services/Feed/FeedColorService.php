@@ -6,7 +6,7 @@ use League\ColorExtractor\Palette;
 use League\ColorExtractor\ColorExtractor;
 use League\ColorExtractor\Color;
 
-class FeedColorService ///привести в порядок: обработка исключений и мб разбивка на несколько сервисов + phpdoc
+class FeedColorService
 {
 
     protected $color;
@@ -86,12 +86,11 @@ class FeedColorService ///привести в порядок: обработка
             $imageData = $this->parseFavicon($favicon);
             $tempFile = tempnam(sys_get_temp_dir(), 'favicon_') . '.png';
 
-            // Пытаемся конвертировать бинарные данные в изображение
             $im = @imagecreatefromstring($imageData);
             if ($im !== false) {
-                imagepng($im, $tempFile); // Сохраняем как PNG
+                imagepng($im, $tempFile); 
                 $color = Palette::fromFilename($tempFile);
-                unlink($tempFile); // Удаляем временный файл
+                unlink($tempFile);
                 $extractor = new ColorExtractor($color);
                 $topColor = $extractor->extract(1)[0];
                 $color = Color::fromIntToHex($topColor);

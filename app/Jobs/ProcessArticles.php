@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Batchable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -119,7 +118,7 @@ class ProcessArticles
                 return null;
             }
 
-            // switch ($contentEncoding) {
+            /// switch ($contentEncoding) {
             //     case 'br': // Brotli
             //         if (!function_exists('brotli_uncompress')) {
             //             throw new Exception('Требуется расширение brotli для декомпрессии');

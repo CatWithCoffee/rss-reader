@@ -2,14 +2,14 @@
     <div class="py-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h1 class="text-2xl font-semibold text-gray-900 mb-6">Управление RSS-фидами</h1>
+                <h1 class="text-2xl font-semibold text-gray-900 mb-6">Управление RSS-источниками</h1>
                 
                 <!-- Форма добавления фида -->
                 <div class="mb-8">
                     <form action="{{ route('admin.feeds') }}" method="post" class="space-y-4">
                         @csrf
                         <div>
-                            <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL фида</label>
+                            <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL источника</label>
                             <x-text-input id="url" class="block w-full" type="text" name="url" 
                                 :value="old('url')" required autofocus autocomplete="url" 
                                 placeholder="https://example.com/feed.xml" />

@@ -4,11 +4,10 @@ namespace App\Services\Feed;
 
 use App\Services\Feed\FeedColorService;
 use Exception;
-use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Vedmant\FeedReader\Facades\FeedReader;
 
-class FeedService ///обработка ошибок
+class FeedService
 {
     protected $feed;
     protected $request;

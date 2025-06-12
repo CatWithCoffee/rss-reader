@@ -96,10 +96,16 @@
                                 </time>
                             </div>
 
+                            <style>
+                                .article-link-{{ $article->id }}:hover {
+                                    color:
+                                        {{ $article->feed->color }}
+                                }
+                            </style>
                             <!-- Заголовок -->
                             <h2 class="text-xl font-bold mb-3">
                                 <a href="{{ $article->link }}" target="_blank" rel="noopener noreferrer"
-                                    class="hover:text-primary-600 transition-colors">
+                                    class="article-link-{{ $article->id }} transition-colors">
                                     {{ $article->title }}
                                 </a>
                             </h2>
@@ -129,7 +135,8 @@
                             <div class="mt-auto flex items-center gap-4">
                                 <!-- Кнопка "Читать полностью" -->
                                 <a href="{{ $article->link }}" target="_blank" rel="noopener noreferrer"
-                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition ease-in-out duration-150 hover:brightness-[.80]"
+                                    style="background-color: {{$article->feed->color}}">
                                     Читать дальше
                                     <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
@@ -141,7 +148,7 @@
                                 <!-- Кнопка "Добавить в избранное" -->
                                 @if (Auth::user())
                                     <button data-favorite-button data-article-id="{{ $article->id }}"
-                                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white transition ease-in-out duration-150 hover:brightness-[.80]">
                                         <span id="favorite-text-{{ $article->id }}">
                                             {{ auth()->user() && auth()->user()->favorites->contains($article->id) ? 'Удалить из избранного' : 'Добавить в избранное' }}
                                         </span>

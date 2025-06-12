@@ -8,6 +8,8 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ConnectException;
+use App\Models\Feed;
+use App\Models\Order;
 
 class ValidRssFeed implements ValidationRule
 {
@@ -20,14 +22,25 @@ class ValidRssFeed implements ValidationRule
     {
         // Проверка формата URL
         if (!filter_var($value, FILTER_VALIDATE_URL)) {
-            $fail('Invalid URL.');
+            $fail('Неверный URL.');
             return;
         }
 
         // Проверка домена (дополнительная валидация)
         $host = parse_url($value, PHP_URL_HOST);
         if (!$host || !$this->isValidDomain($host)) {
-            $fail('Invalid domain in URL.');
+            $fail('Неверный домен в URL.');
+            return;
+        }
+
+        // Проверка уникальности в таблицах Feed и Order
+        if (Feed::where('url', $value)->exists()) {
+            $fail('Этот URL уже используется.');
+            return;
+        }
+
+        if (Order::where('url', $value)->exists()) {
+            $fail('Этот URL уже находится в заявках.');
             return;
         }
 
@@ -36,7 +49,7 @@ class ValidRssFeed implements ValidationRule
             $client = new Client([
                 'timeout' => 10,
                 'connect_timeout' => 5,
-                'verify' => false, /// Только для разработки! В продакшене должно быть true
+                'verify' => false, /// для разработки. в проде надо true
             ]);
 
             $response = $client->get($value, [
@@ -46,15 +59,15 @@ class ValidRssFeed implements ValidationRule
             ]);
 
             if (!$this->isValidRssContent($response->getBody()->getContents())) {
-                $fail('The provided URL does not contain a valid RSS feed.');
+                $fail('Предоставленный адрес не содержит валидный RSS канал.');
             }
 
         } catch (ConnectException $e) {
-            $fail('Failed to connect to the server. Check the URL and availability of the site.');
+            $fail('Не удалось подключиться к серверу. Проверьте URL и доступность сайта.');
         } catch (RequestException $e) {
-            $fail('The server returned an error: ' . $e->getResponse()?->getStatusCode() ?? 'нет ответа');
+            $fail('Сервер вернул ошибку: ' . $e->getResponse()?->getStatusCode() ?? 'нет ответа');
         } catch (Exception $e) {
-            $fail('Error checking RSS feed.');
+            $fail('Ошибка обработки RSS канала.');
         }
     }
 

@@ -13,7 +13,7 @@
                             </svg>
                         </div>
                         <div class="ml-4">
-                            <p class="text-gray-500">Фиды</p>
+                            <p class="text-gray-500">Источники</p>
                             <p class="text-2xl font-bold">{{ $stat->feeds_count }}</p>
                         </div>
                     </div>
@@ -53,8 +53,8 @@
             </div>
 
             <!-- Диаграмма -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h2 class="text-xl font-bold mb-4 mx-[40%]">Самые большие фиды</h2>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 flex flex-col">
+                <h2 class="text-xl font-bold mb-4 mx-auto">Самые большие источники</h2>
                 <div class="mt-6">
                     <!-- Контейнер для графика -->
                     <canvas id="feedChart" class="h-64"></canvas>

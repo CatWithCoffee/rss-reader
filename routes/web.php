@@ -7,7 +7,6 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\UserController;
-use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -30,10 +29,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
-// Route::middleware('auth')->group(function () {
-    
-// });
 
 Route::middleware(['auth', 'role:admin'])->group(function() {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin');

@@ -20,7 +20,7 @@
             document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Success!',
+                    title: 'Успех!',
                     text: "{{ session('success') }}",
                     toast: true,
                     position: 'bottom-end',
@@ -35,7 +35,7 @@
             document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'info',
-                    title: 'Info',
+                    title: 'Инфо',
                     text: "{{ session('info') }}",
                     toast: true,
                     position: 'bottom-end',
@@ -50,7 +50,7 @@
             document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Warning!',
+                    title: 'Внимание!',
                     text: "{{ session('warning') }}",
                     toast: true,
                     position: 'bottom-end',
@@ -63,7 +63,7 @@
             document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error!',
+                    title: 'Ошибка!',
                     text: "{{ session('error') }}",
                     toast: true,
                     position: 'bottom-end',

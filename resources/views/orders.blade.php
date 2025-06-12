@@ -8,7 +8,7 @@
                 <form action="{{ route('orders.store') }}" method="post" class="space-y-4">
                     @csrf
                     <div>
-                        <label for="url" class="block text-sm font-medium text-gray-700 mb-1">Ссылка на RSS-фид</label>
+                        <label for="url" class="block text-sm font-medium text-gray-700 mb-1">Ссылка на RSS-канал источника</label>
                         <x-text-input id="url" class="block w-full" type="text" name="url" :value="old('url')" required
                             autofocus autocomplete="url" placeholder="https://example.com/feed.xml" />
                         <x-input-error :messages="$errors->get('url')" class="mt-2" />

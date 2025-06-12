@@ -6,17 +6,11 @@ use App\Models\Category;
 use App\Models\Feed;
 use App\Models\Article;
 
-use App\Models\Statistics;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Exception;
 use Log;
 use Throwable;
-use Vedmant\FeedReader\Facades\FeedReader;
-use App\Services\Feed\Articleservice;
 use App\Jobs\ProcessArticles;
-
-use Carbon\Carbon;
 
 class ArticleController extends Controller
 {

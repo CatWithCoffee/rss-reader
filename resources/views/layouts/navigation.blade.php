@@ -102,7 +102,7 @@
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
-                        {{ __('Фиды') }}
+                        {{ __('Источники') }}
                     </x-nav-link>
                     
                     <x-nav-link :href="route('admin.Articles_all')" :active="request()->routeIs('admin.Articles*')">
@@ -146,7 +146,7 @@
                 </x-responsive-nav-link>
                 @if(request()->is('admin*'))
                     <x-responsive-nav-link :href="route('admin.feeds')" :active="request()->routeIs('admin.feeds')">
-                        Фиды
+                        Источники
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('admin.Articles_all')" :active="request()->routeIs('admin.Articles_all')">
                         Статьи
@@ -192,7 +192,4 @@
             </div>
         </div>
     </div>
-</nav>
-
-    
 </nav>
