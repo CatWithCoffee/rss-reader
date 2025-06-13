@@ -51,11 +51,11 @@ class ProcessArticles
     public function handle(): array
     {
         Log::info("Processing feed: {$this->feed->id}:{$this->feed->title}");
-        dump("Processing feed: {$this->feed->id}:{$this->feed->title}");
+        // dump("Processing feed: {$this->feed->id}:{$this->feed->title}");
 
         $articles = $this->fetchArticles($this->feed);
         if ($articles === null) {
-            dump("No new articles to process for feed: {$this->feed->title}");
+            // dump("No new articles to process for feed: {$this->feed->title}");
             Log::info("No new articles to process for feed: {$this->feed->title}");
             return ['count' => 0, 'skipped' => null];
         }
@@ -80,7 +80,7 @@ class ProcessArticles
 
         $skipped = $articlesCount - $totalCount;
         Log::info("Feed processing completed: {$this->feed->title}, total articles saved: {$totalCount}, skipped: {$skipped}");
-        dump("Completed: {$this->feed->title}, total articles saved: {$totalCount}, skipped: {$skipped}");
+        // dump("Completed: {$this->feed->title}, total articles saved: {$totalCount}, skipped: {$skipped}");
         $result = ['count' => $totalCount, 'skipped' => $skipped];
         return (array) $result;
     }
@@ -143,14 +143,14 @@ class ProcessArticles
 
             // 3. Проверка пустого содержимого
             if (empty($content)) {
-                dump('empty response');
+                // dump('empty response');
                 throw new Exception('Получен пустой ответ');
             }
 
             // 4. Проверка изменений через хеш
             $newContentHash = md5($content);
             if ($this->feedUnchanged($feed, $response, $newContentHash)) {
-                dump('feed unchanged');
+                // dump('feed unchanged');
                 $feed->touch();
                 return null;
             }
@@ -161,7 +161,7 @@ class ProcessArticles
             $f->enable_cache(false);
 
             if (!$f->init()) {
-                dump('parsing error');
+                // dump('parsing error');
                 throw new Exception("Parsing error: " . $f->error());
             }
 
@@ -173,7 +173,7 @@ class ProcessArticles
 
         } catch (Exception $e) {
             Log::error("Feed processing error {$feed->url}: " . $e->getMessage());
-            dump("Feed processing error {$feed->url}: " . $e->getMessage());
+            // dump("Feed processing error {$feed->url}: " . $e->getMessage());
             return null;
         }
     }
